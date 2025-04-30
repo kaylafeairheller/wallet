@@ -125,6 +125,8 @@ class WalletApp(ft.Stack):
         tr = ft.TemplateRoute(self.page.route)
         if tr.match('/'):
             await self.page.go_async('/splash')
+        elif tr.match('/home'):
+            await self.layout.set_home()
         elif tr.match('/identifiers'):
             await self.layout.set_identifiers_list()
         elif tr.match('/identifiers/create'):
@@ -153,6 +155,12 @@ class WalletApp(ft.Stack):
             await self.layout.set_witness_view(tr.prefix)
         elif tr.match('/identifiers/:prefix/view'):
             await self.layout.set_witness_view()
+        elif tr.match('/workflows/identifiers/create/default'):
+            await self.layout.set_default_identifier_create()
+        elif tr.match('/workflows/identifiers/:prefix/contacts/connect'):
+            await self.layout.set_connect_contact(tr.prefix)
+        elif tr.match('/workflows/identifiers/:prefix/contacts/:oobi/multisig/create'):
+            await self.layout.set_create_multisig(tr.prefix, tr.oobi)
         elif tr.match('/splash'):
             logger.info('Route change to /splash')
             await self.layout.set_splash_view()

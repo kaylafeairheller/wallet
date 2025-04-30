@@ -2,16 +2,23 @@ import flet as ft
 
 
 class Navbar(ft.Stack):
-    IDENTIFIERS = 0
-    CONTACTS = 1
-    WITNESSES = 2
-    SETTINGS = 3
+    HOME = 0
+    IDENTIFIERS = 1
+    CONTACTS = 2
+    WITNESSES = 3
+    SETTINGS = 4
 
     def __init__(self, page: ft.Page):
         super().__init__()
         self.page = page
 
         destinations = [
+            ft.NavigationRailDestination(
+                icon_content=ft.Icon(ft.icons.HOME),
+                selected_icon_content=ft.Icon(ft.icons.HOME_OUTLINED),
+                label='Home',
+                padding=ft.padding.all(10),
+            ),
             ft.NavigationRailDestination(
                 icon=ft.icons.DATASET_LINKED,
                 selected_icon=ft.icons.DATASET_LINKED_OUTLINED,
@@ -54,7 +61,9 @@ class Navbar(ft.Stack):
     async def nav_change(self, e):
         index = e if (type(e) is int) else e.control.selected_index
         self.rail.selected_index = index
-        if index == self.IDENTIFIERS:
+        if index == self.HOME:
+            self.page.route = '/home'
+        elif index == self.IDENTIFIERS:
             self.page.route = '/identifiers'
         elif index == self.CONTACTS:
             self.page.route = '/contacts'

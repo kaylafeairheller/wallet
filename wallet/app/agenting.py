@@ -265,7 +265,7 @@ class AgentConnection(ft.AlertDialog):
         self.app.reload()
         self.page.title = f'{self.app.name} - {name} [{self.app.environment.value}]'
 
-        self.page.route = '/identifiers'
+        self.page.route = '/home'
         self.page.hby_name = name
         await self.page.update_async()
 

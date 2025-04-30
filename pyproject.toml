@@ -14,7 +14,7 @@ dependencies = [
     "dataclasses-json==0.6.7",
     "flet==0.24.1",
     "cit-hio==0.6.14",
-    "cit-keri==1.1.22rc1",
+    "cit-keri==1.1.26",
     "mnemonic==0.21",
     "multicommand==1.0.0",
     "pillow==11.0.0",

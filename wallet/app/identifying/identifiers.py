@@ -38,7 +38,13 @@ class Identifiers(IdentifierBase):
     def get_habs(agent):
         """Get the Hab instances an agent has."""
         return agent.hby.habs.values()
-
+    
+    @staticmethod
+    def get_identifier(agent, aid):
+        for hab in agent.hby.habs.values():
+            if hab.pre == aid:
+                return hab
+            
     @staticmethod
     def get_aids(agent):
         """Get the identifiers (AID prefixes) an agent has."""

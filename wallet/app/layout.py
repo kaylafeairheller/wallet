@@ -4,6 +4,9 @@ import flet as ft
 from keri.app import connecting, habbing
 
 from wallet.app import contacting, identifying, settings, splashing
+from wallet.app.workflows.create_default_identifier import CreateDefaultIdentifierPanel
+from wallet.app.workflows.connect_contact import ConnectWithContactPanel
+from wallet.app.workflows.create_mutisig import CreateMutisigPanel
 from wallet.app.contacting.create_contact import CreateContactPanel
 from wallet.app.contacting.view_contact import ViewContactPanel
 from wallet.app.identifying.create_identifier import CreateIdentifierPanel
@@ -11,6 +14,7 @@ from wallet.app.identifying.rotate_group_identifier import RotateGroupIdentifier
 from wallet.app.identifying.rotate_identifier import RotateIdentifierPanel
 from wallet.app.identifying.view_identifer import ViewIdentifierPanel
 from wallet.app.naving import Navbar
+from wallet.app.home import Home
 from wallet.app.witnessing.add_witness import AddWitness
 from wallet.app.witnessing.view_witness import ViewWitness
 from wallet.app.witnessing.witnesses import Witnesses
@@ -25,6 +29,7 @@ class Layout(ft.Row):
         self.app = app
         self.page = page
         self.navbar = Navbar(page=page)
+        self.home = Home(app)
         self.notifications = Notifications(app)
         self.identifiers = identifying.Identifiers(app)
         self.contacts = contacting.Contacts(app)
@@ -47,6 +52,14 @@ class Layout(ft.Row):
     def active_view(self, view):
         self._active_view = view if view else self.splash
         self.controls[-1] = self._active_view
+
+    async def set_home(self):
+        self.active_view = self.home
+        self.navbar.rail.selected_index = Navbar.HOME
+        self.page.floating_action_button = None
+
+        await self.navbar.update_async()
+        await self.update_async()
 
     async def set_witness_view(self, aid):
         org = connecting.Organizer(hby=self.app.hby)
@@ -157,3 +170,28 @@ class Layout(ft.Row):
 
         await self.navbar.update_async()
         await self.page.update_async()
+
+    async def set_default_identifier_create(self):
+        self.active_view = CreateDefaultIdentifierPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_connect_contact(self, prefix):
+        hab = self.app.hby.habs[prefix]
+        self.active_view = ConnectWithContactPanel(self.app, hab)
+        self.navbar.rail.selected_index = Navbar.HOME
+        self.page.floating_action_button = None
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_create_multisig(self, prefix, oobi):
+        hab = self.app.hby.habs[prefix]
+        self.active_view = CreateMutisigPanel(self.app, hab, oobi)
+        self.navbar.rail.selected_index = Navbar.HOME
+        self.page.floating_action_button = None
+
+        await self.navbar.update_async()
+        await self.update_async()
