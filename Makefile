@@ -14,7 +14,7 @@ build-macos: clean version
 	@uv run flet build -o ./build macos
 
 dev: version
-	@export FLET_DEBUG=1; export WALLET_ENVIRONMENT=development; uv run flet run main.py
+	@export FLET_DEBUG=1; export WALLET_ENVIRONMENT=production; uv run flet run main.py
 
 fmt:
 	@uv tool run ruff check --select I --fix

@@ -38,6 +38,7 @@ class CreateDefaultIdentifierPanel(IdentifierBase):
         kwargs['ncount'] = 1
         kwargs['nsith'] = 1
         kwargs['toad'] = 0
+        # TODO self.toad.value = str(self.recommendedThold(len(self.rotationList.controls)))
         kwargs['estOnly'] = False
         kwargs['DnD'] = False
 
