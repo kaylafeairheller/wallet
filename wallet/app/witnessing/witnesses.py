@@ -68,7 +68,7 @@ class Witnesses(WitnessBase):
             None
         """
         contacts = sorted(contacts, key=lambda c: c['alias'])
-        contacts = list(filter(lambda c: 'witness' in c['type'], contacts))
+        contacts = list(filter(lambda c: 'tag=witness' in c['oobi'], contacts))
 
         self.list.controls.clear()
 

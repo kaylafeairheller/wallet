@@ -38,7 +38,6 @@ class Contacts(ContactBase):
 
         contacts = sorted(contacts, key=lambda c: c['alias'])
         contacts = list(filter(lambda c: 'tag=witness' not in c['oobi'], contacts))
-        contacts = list(filter(lambda c: 'witness' not in c['type'], contacts))
 
         if len(contacts) == 0:
             self.list.controls.append(

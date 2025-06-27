@@ -4,9 +4,14 @@ import flet as ft
 from keri.app import connecting, habbing
 
 from wallet.app import contacting, identifying, settings, splashing
-from wallet.app.workflows.create_default_identifier import CreateDefaultIdentifierPanel
-from wallet.app.workflows.connect_contact import ConnectWithContactPanel
-from wallet.app.workflows.create_mutisig import CreateMutisigPanel
+from wallet.app.workflows.create_singlesig.create_identifier import CreateSingleSigIdentifierPanel
+from wallet.app.workflows.create_multisig.create_identifier import CreateMultiSigIdentifierPanel
+from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
+from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMutisigPanel
+from wallet.app.workflows.accept_delegation.accept_delegation import CreateAcceptDelegationPanel
+from wallet.app.workflows.issue_ecr.issue_ecr_auth import CreateIssueECRAuthPanel
+from wallet.app.workflows.issue_oor.issue_oor_auth import CreateIssueOORAuthPanel
+from wallet.app.workflows.issue_qvi.issue_qvi import CreateIssueQVIPanel
 from wallet.app.contacting.create_contact import CreateContactPanel
 from wallet.app.contacting.view_contact import ViewContactPanel
 from wallet.app.identifying.create_identifier import CreateIdentifierPanel
@@ -171,12 +176,19 @@ class Layout(ft.Row):
         await self.navbar.update_async()
         await self.page.update_async()
 
-    async def set_default_identifier_create(self):
-        self.active_view = CreateDefaultIdentifierPanel(self.app)
+    async def set_singlesig_identifier_create(self):
+        self.active_view = CreateSingleSigIdentifierPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
         await self.navbar.update_async()
         await self.update_async()
+
+    async def set_multisig_identifier_create(self):
+            self.active_view = CreateMultiSigIdentifierPanel(self.app)
+            self.navbar.rail.selected_index = Navbar.HOME
+
+            await self.navbar.update_async()
+            await self.update_async()
 
     async def set_connect_contact(self, prefix):
         hab = self.app.hby.habs[prefix]
@@ -192,6 +204,34 @@ class Layout(ft.Row):
         self.active_view = CreateMutisigPanel(self.app, hab, oobi)
         self.navbar.rail.selected_index = Navbar.HOME
         self.page.floating_action_button = None
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_accept_delegation(self):
+        self.active_view = CreateAcceptDelegationPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_issue_qvi(self):
+        self.active_view = CreateIssueQVIPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_issue_ecr_auth(self):
+        self.active_view = CreateIssueECRAuthPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_issue_oor_auth(self):
+        self.active_view = CreateIssueOORAuthPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
 
         await self.navbar.update_async()
         await self.update_async()

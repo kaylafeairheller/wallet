@@ -155,12 +155,22 @@ class WalletApp(ft.Stack):
             await self.layout.set_witness_view(tr.prefix)
         elif tr.match('/identifiers/:prefix/view'):
             await self.layout.set_witness_view()
-        elif tr.match('/workflows/identifiers/create/default'):
-            await self.layout.set_default_identifier_create()
-        elif tr.match('/workflows/identifiers/:prefix/contacts/connect'):
+        elif tr.match('/workflows/singlesig/identifiers/create'):
+            await self.layout.set_singlesig_identifier_create()
+        elif tr.match('/workflows/multisig/identifiers/create'):
+            await self.layout.set_multisig_identifier_create()
+        elif tr.match('/workflows/multisig/identifiers/:prefix/contacts/connect'):
             await self.layout.set_connect_contact(tr.prefix)
-        elif tr.match('/workflows/identifiers/:prefix/contacts/:oobi/multisig/create'):
+        elif tr.match('/workflows/multisig/identifiers/:prefix/contacts/:oobi/multisig/create'):
             await self.layout.set_create_multisig(tr.prefix, tr.oobi)
+        elif tr.match('/workflows/delegation/accept'):
+            await self.layout.set_accept_delegation()
+        elif tr.match('/workflows/issue/ecr'):
+            await self.layout.set_issue_ecr_auth()
+        elif tr.match('/workflows/issue/oor'):
+            await self.layout.set_issue_oor_auth()
+        elif tr.match('/workflows/issue/qvi'):
+            await self.layout.set_issue_qvi()
         elif tr.match('/splash'):
             logger.info('Route change to /splash')
             await self.layout.set_splash_view()
@@ -222,6 +232,8 @@ class WalletApp(ft.Stack):
 
     def reload_witnesses_and_members(self):
         org = connecting.Organizer(hby=self.agent.hby)
+
+        print("LISTING!!", org.list())
 
         self.witnesses.clear()
         self.members.clear()

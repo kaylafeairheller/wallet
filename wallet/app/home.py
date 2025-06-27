@@ -49,19 +49,41 @@ class HomeBase(ft.Column):
 class Home(HomeBase):
     def __init__(self, app):
         self.app = app
-        self.buttons = ft.Column(
-            [
-                ft.ElevatedButton(text="Create Group Multisig", on_click=self.create_group_multisig),
-            ],
-            spacing=10,
-            expand=True,
-        )
+        self.buttons = ft.Column([
+            ft.ElevatedButton(text="Create Singlesig", on_click=self.create_singlesig),
+            ft.ElevatedButton(text="Create Group Multisig", on_click=self.create_multisig),
+            ft.ElevatedButton(text="Accept Delegation", on_click=self.acceept_delegation),
+            ft.ElevatedButton(text="Issue QVI", on_click=self.issue_qvi),
+            ft.ElevatedButton(text="Issue OOR Auth", on_click=self.issue_oor_auth),
+            ft.ElevatedButton(text="Issue ECR Auth", on_click=self.issue_ecr_auth),
+        ])
 
         super().__init__(app, ft.Container(content=self.buttons, padding=padding.only(bottom=125)))
 
     def did_mount(self):
         self.page.update()
 
-    async def create_group_multisig(self, e):
+    async def create_singlesig(self, e):
         print(f"Beginning {e.control.text}")
-        self.app.page.route = '/workflows/identifiers/create/default'
+        self.app.page.route = '/workflows/singlesig/identifiers/create'
+
+    async def create_multisig(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/workflows/multisig/identifiers/create'
+
+    async def acceept_delegation(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/workflows/delegation/accept'
+
+    async def issue_qvi(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/workflows/issue/qvi'
+
+    async def issue_ecr_auth(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/workflows/issue/ecr'
+
+    async def issue_oor_auth(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/workflows/issue/oor'
+

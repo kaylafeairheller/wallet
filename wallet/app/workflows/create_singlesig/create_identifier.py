@@ -10,21 +10,34 @@ from wallet.app.identifying.identifier import IdentifierBase
 logger = logging.getLogger('wallet')
 
 
-class CreateDefaultIdentifierPanel(IdentifierBase):
+class CreateSingleSigIdentifierPanel(IdentifierBase):
     """
-    CreateDefaultIdentifierPanel class for creating a default identifier in the application.
+    CreateSingleSigIdentifierPanel class for creating a default identifier in the application.
     """
 
     def __init__(self, app):
         self.app = app
         self.org = connecting.Organizer(hby=app.agent.hby)
+
+        self.witnesses = ft.Column([], spacing=0, expand=True)
+    
+        # Loading default witnesses
+        self.witnessList = self.loadWitnesses(app)
+
+        self.witnesses.controls.clear()
+
+        for wit in self.witnessList:
+            self.witnesses.controls.append(
+                ft.Text(wit['text']),
+            )
+
         self.alias = ft.TextField(
             label='Alias',
             hint_text='Local alias for identifier',
         )
         self.panel_ref = self.panel()
 
-        super(CreateDefaultIdentifierPanel, self).__init__(app, self.panel_ref)
+        super(CreateSingleSigIdentifierPanel, self).__init__(app, self.panel_ref)
 
     async def createAid(self, _):
         if self.alias.value == '':
@@ -37,18 +50,60 @@ class CreateDefaultIdentifierPanel(IdentifierBase):
         kwargs['isith'] = 1
         kwargs['ncount'] = 1
         kwargs['nsith'] = 1
-        kwargs['toad'] = 0
-        # TODO self.toad.value = str(self.recommendedThold(len(self.rotationList.controls)))
         kwargs['estOnly'] = False
         kwargs['DnD'] = False
 
+        # Select witnesses and set threshold
+        wit_thold = self.recommendedThold(len(self.witnessList))
+        kwargs['toad'] = wit_thold
+        kwargs['wits'] = []
+
+        count = 0
+        for wit in self.witnessList:
+            if count >= wit_thold:
+                break
+
+            kwargs['wits'].append(wit['key'])
+            count += 1
+        
         hab = self.app.hby.makeHab(name=self.alias.value, **kwargs)
         serder, _, _ = hab.getOwnEvent(sn=0)
         await self.app.snack(f'Created AID {hab.pre}.')
 
         self.reset()
-        self.app.page.route = f'/workflows/identifiers/{hab.pre}/contacts/connect'
+        self.app.page.route = f'/identifiers'
         await self.page.update_async()
+
+    @staticmethod
+    def loadWitnesses(app):
+        return [
+            {
+                'key': wit['id'],
+                'text': f'{wit["alias"]} | {wit["id"]}' if wit['alias'] else f'{wit["id"]}',
+                'data': (wit['id'], wit['alias']),
+            }
+            for wit in app.witnesses
+        ]
+
+    @staticmethod
+    def recommendedThold(numWits):
+        match numWits:
+            case 0:
+                return 0
+            case 1:
+                return 1
+            case 2 | 3:
+                return 2
+            case 4:
+                return 3
+            case 5 | 6:
+                return 4
+            case 7:
+                return 5
+            case 8 | 9:
+                return 7
+            case 10:
+                return 8
 
     async def cancel(self, _):
         self.reset()
@@ -63,7 +118,7 @@ class CreateDefaultIdentifierPanel(IdentifierBase):
             content=ft.Column(
                 [
                     ft.Text(
-                        'Create Default Identifier',
+                        'Create Singlesig Identifier',
                         weight=FontWeight.BOLD,
                     ),
                     ft.Row(
@@ -71,6 +126,11 @@ class CreateDefaultIdentifierPanel(IdentifierBase):
                             self.alias,
                         ]
                     ),
+                    ft.Text(
+                        'Witnesses Available:',
+                        weight=FontWeight.BOLD,
+                    ),
+                    self.witnesses,
                     ft.Row(
                         [
                             ft.ElevatedButton(

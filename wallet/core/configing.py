@@ -63,7 +63,7 @@ def read_config():
             config_dir = './conf/staging'
             config_file = 'staging'
         case Environments.DEVELOPMENT:
-            wit_pool_path = './conf/witness-pools-local.json'
+            wit_pool_path = './conf/local/keri/cf/local.json'
             config_dir = './conf/local'
             config_file = 'local'
         case _:
