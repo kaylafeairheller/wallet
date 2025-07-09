@@ -233,8 +233,6 @@ class WalletApp(ft.Stack):
     def reload_witnesses_and_members(self):
         org = connecting.Organizer(hby=self.agent.hby)
 
-        print("LISTING!!", org.list())
-
         self.witnesses.clear()
         self.members.clear()
         for contact in org.list():

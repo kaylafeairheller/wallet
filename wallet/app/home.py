@@ -71,7 +71,7 @@ class Home(HomeBase):
         ], spacing=15, )
 
         row2 = ft.Row([
-            make_tile("Accept Delegation", "Accept identifier control from another party", "Accept Delegation", self.accept_delegation),
+            make_tile("Accept Delegation", "Accept delegation from another party", "Accept Delegation", self.accept_delegation),
         ], spacing=15)
 
         row3 = ft.Row([
