@@ -70,6 +70,9 @@ class CreateSingleSigIdentifierPanel(IdentifierBase):
         serder, _, _ = hab.getOwnEvent(sn=0)
         await self.app.snack(f'Created AID {hab.pre}.')
 
+        self.app.agent.witners.push(dict(serder=serder))
+        await self.app.snack(f'Creating {hab.pre}, waiting for witness receipts...')
+
         self.reset()
         self.app.page.route = f'/identifiers'
         await self.page.update_async()

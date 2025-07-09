@@ -49,16 +49,40 @@ class HomeBase(ft.Column):
 class Home(HomeBase):
     def __init__(self, app):
         self.app = app
-        self.buttons = ft.Column([
-            ft.ElevatedButton(text="Create Singlesig", on_click=self.create_singlesig),
-            ft.ElevatedButton(text="Create Group Multisig", on_click=self.create_multisig),
-            ft.ElevatedButton(text="Accept Delegation", on_click=self.acceept_delegation),
-            ft.ElevatedButton(text="Issue QVI", on_click=self.issue_qvi),
-            ft.ElevatedButton(text="Issue OOR Auth", on_click=self.issue_oor_auth),
-            ft.ElevatedButton(text="Issue ECR Auth", on_click=self.issue_ecr_auth),
-        ])
 
-        super().__init__(app, ft.Container(content=self.buttons, padding=padding.only(bottom=125)))
+        def make_tile(title, subtitle, button_text, handler):
+            return ft.Container(
+                content=ft.Column([
+                    ft.Text(title, style="headlineSmall"),
+                    ft.Text(subtitle, style="bodyMedium"),
+                    ft.ElevatedButton(text=button_text, on_click=handler)
+                ],
+                spacing=10),
+                padding=15,
+                bgcolor=ft.colors.SURFACE_VARIANT,
+                border_radius=10,
+                width=300,
+                height=180,
+            )
+
+        row1 = ft.Row([
+            make_tile("Create Singlesig Identifier", "For individuals", "Create Singlesig", self.create_singlesig),
+            make_tile("Create Group Multisig Identifier", "For multisig groups", "Create Multisig", self.create_multisig),
+        ], spacing=15, )
+
+        row2 = ft.Row([
+            make_tile("Accept Delegation", "Accept identifier control from another party", "Accept Delegation", self.accept_delegation),
+        ], spacing=15)
+
+        row3 = ft.Row([
+            make_tile("Issue QVI Credential", "Qualified vLEI Issuer", "Issue QVI", self.issue_qvi),
+            make_tile("Issue OOR Auth Credential", "Organizational Official Role", "Issue OOR Auth", self.issue_oor_auth),
+            make_tile("Issue ECR Auth Credential", "Entity Credentials Registry", "Issue ECR Auth", self.issue_ecr_auth),
+        ], spacing=15)
+
+        layout = ft.Column([row1, row2, row3], spacing=15, expand=True)
+
+        super().__init__(app, ft.Container(content=layout, padding=padding.only(bottom=125)))
 
     def did_mount(self):
         self.page.update()
@@ -71,7 +95,7 @@ class Home(HomeBase):
         print(f"Beginning {e.control.text}")
         self.app.page.route = '/workflows/multisig/identifiers/create'
 
-    async def acceept_delegation(self, e):
+    async def accept_delegation(self, e):
         print(f"Beginning {e.control.text}")
         self.app.page.route = '/workflows/delegation/accept'
 
@@ -86,4 +110,3 @@ class Home(HomeBase):
     async def issue_oor_auth(self, e):
         print(f"Beginning {e.control.text}")
         self.app.page.route = '/workflows/issue/oor'
-

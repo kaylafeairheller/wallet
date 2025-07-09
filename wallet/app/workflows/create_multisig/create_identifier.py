@@ -65,13 +65,13 @@ class CreateMultiSigIdentifierPanel(IdentifierBase):
 
             kwargs['wits'].append(wit['key'])
             count += 1
-        
-        print("THRESHOLD!!! ", wit_thold)
-        print("WITNESSES!!! ", kwargs['wits'])
 
         hab = self.app.hby.makeHab(name=self.alias.value, **kwargs)
         serder, _, _ = hab.getOwnEvent(sn=0)
         await self.app.snack(f'Created AID {hab.pre}.')
+
+        self.app.agent.witners.push(dict(serder=serder))
+        await self.app.snack(f'Creating {hab.pre}, waiting for witness receipts...')
 
         self.reset()
         self.app.page.route = f'/workflows/multisig/identifiers/{hab.pre}/contacts/connect'
