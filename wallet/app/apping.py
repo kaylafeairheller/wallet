@@ -161,8 +161,8 @@ class WalletApp(ft.Stack):
             await self.layout.set_multisig_identifier_create()
         elif tr.match('/workflows/multisig/identifiers/:prefix/contacts/connect'):
             await self.layout.set_connect_contact(tr.prefix)
-        elif tr.match('/workflows/multisig/identifiers/:prefix/contacts/:oobi/multisig/create'):
-            await self.layout.set_create_multisig(tr.prefix, tr.oobi)
+        elif tr.match('/workflows/multisig/identifiers/:prefix/contacts/:contact/multisig/create'):
+            await self.layout.set_create_multisig(tr.prefix, tr.contact)
         elif tr.match('/workflows/delegation/accept'):
             await self.layout.set_accept_delegation()
         elif tr.match('/workflows/issue/ecr'):

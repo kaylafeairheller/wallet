@@ -199,9 +199,9 @@ class Layout(ft.Row):
         await self.navbar.update_async()
         await self.update_async()
 
-    async def set_create_multisig(self, prefix, oobi):
+    async def set_create_multisig(self, prefix, contact):
         hab = self.app.hby.habs[prefix]
-        self.active_view = CreateMutisigPanel(self.app, hab, oobi)
+        self.active_view = CreateMutisigPanel(self.app, hab, contact)
         self.navbar.rail.selected_index = Navbar.HOME
         self.page.floating_action_button = None
 

@@ -13,10 +13,10 @@ class CreateMutisigPanel(IdentifierBase):
     CreateMutisigPanel class for creating a Group Multisig with two given identifiers.
     """
         
-    def __init__(self, app, hab, oobi):
+    def __init__(self, app, hab, contact):
         self.app = app
         self.hab = hab
-        self.oobi = oobi
+        self.contact = contact
 
         self.order = ["yours", "theirs"]  # Default order
         self.lead = ft.Column()
@@ -53,7 +53,7 @@ class CreateMutisigPanel(IdentifierBase):
             return ft.Row(
                     [
                         ft.Text('Connecting Identifier', weight=FontWeight.BOLD),
-                        ft.Text(self.oobi),
+                        ft.Text(self.contact),
                     ]
                 )
 

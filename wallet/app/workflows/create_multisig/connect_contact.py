@@ -1,4 +1,8 @@
 import logging
+import base64
+import io
+import qrcode
+
 import random
 from urllib.parse import urljoin, urlparse
 
@@ -22,48 +26,109 @@ class ConnectWithContactPanel(ContactBase):
         self.app = app
         self.hab = hab
 
-        self.alias = ft.TextField(label='Alias')
-        self.oobi = ft.TextField(label='OOBI', width=400)
+        self.alias = "foo"
+        self.oobiTabs = ft.Column()
+        self.oobi_qr = ft.Image(
+            src='',
+        )
+        self.oobi_url = ft.Text('')
+        self.oobi_copy = ft.IconButton()
 
-        oobis = []
-        for pre in self.app.hby.habs:
-            oobis.append(self.generate_oobi(pre))
-        oobis = [o for oob in oobis for o in oob]
+        self.oobi_url = self.generate_oobi()
+        print("got the oobi, now what?", self.oobi_url)
 
-        if len(oobis) > 0:
-            o = random.choice(oobis)
-            self.my_oobi = ft.Text(
-                f'{o}', tooltip=o, width=800, max_lines=3, overflow=ft.TextOverflow.VISIBLE, weight=ft.FontWeight.W_200
-            )
+        # TODO figure out how to use the alias and oobi that the user enters on this screen
+        print("checking")
+        print(self.alias, self.oobi)
 
-            async def copy(e):
-                await self.app.page.set_clipboard_async(e.control.data)
-
-                self.page.snack_bar = ft.SnackBar(ft.Text('OOBI URL Copied!'), duration=2000)
-
-                self.page.snack_bar.open = True
-                await self.page.update_async()
-
-            self.oobi_copy = ft.IconButton(icon=ft.icons.COPY_ROUNDED, data=o, on_click=copy)
+        self.contact = f'{self.alias} | {self.oobi.split("/oobi/")[1].split("/")[0]}'
 
         self.verified = ft.Icon(ft.icons.SHIELD_OUTLINED, size=32, color=Colouring.get(Colouring.RED))
         super(ConnectWithContactPanel, self).__init__(app=app, panel=self.panel())
 
     async def callback(self, result):
         logger.info('callback: %s', result)
-        self.app.page.route = f'/workflows/multisig/identifiers/{self.hab.pre}/contacts/{self.oobi}/multisig/create'
+        print("GOING TO CREATE MULTISIG SCREEN")
+        route = f'/workflows/multisig/identifiers/{self.hab.pre}/contacts/{self.contact}/multisig/create'
+        print(route)
+        self.app.page.route = route
         await self.app.page.update_async()
 
     async def error_callback(self, result):
         pass
 
+    def load_oobis(self):
+        oobis = []
+        for wit in self.hab.kever.wits:
+            urls = self.hab.fetchUrls(eid=wit, scheme=kering.Schemes.http) or self.hab.fetchUrls(
+                eid=wit, scheme=kering.Schemes.https
+            )
+            if not urls:
+                return []
+
+            url = urls[kering.Schemes.http] if kering.Schemes.http in urls else urls[kering.Schemes.https]
+            up = urlparse(url)
+            oobis.append(urljoin(up.geturl(), f'/oobi/{self.hab.pre}/witness/{wit}'))
+
+        return oobis
+    
+    def generate_oobi(self):
+        oobis = self.load_oobis()
+
+        if len(oobis) == 0:
+            return ""
+
+        oobi = random.choice(oobis)
+        self.oobi = oobi
+        img = qrcode.make(oobi)
+        f = io.BytesIO()
+        img.save(f)
+        f.seek(0)
+
+        async def copy(e):
+            await self.app.page.set_clipboard_async(e.control.data)
+            self.page.snack_bar = ft.SnackBar(ft.Text('OOBI URL Copied!'), duration=2000)
+
+            self.page.snack_bar.open = True
+            await self.page.update_async()
+
+        self.oobi_qr = ft.Image(src_base64=base64.b64encode(f.read()).decode('utf-8'), width=175)
+        self.oobi_url = ft.Container(
+            content=ft.Text(
+                value=oobi,
+                tooltip=oobi,
+                max_lines=3,
+                size=12,
+                overflow=ft.TextOverflow.VISIBLE,
+                weight=ft.FontWeight.W_200,
+                width=600,
+            ),
+            on_click=copy,
+            data=oobi,
+        )
+        self.oobi_copy = ft.IconButton(icon=ft.icons.COPY_ROUNDED, data=oobi, on_click=copy, tooltip='Copy OOBI')
+
+        self.oobiTabs.controls.clear()
+        self.oobiTabs.controls.append(
+            ft.Column(
+                [
+                    ft.Row([self.oobi_url, self.oobi_copy]),
+                    ft.Row([self.oobi_qr]),
+                    ft.Container(padding=ft.padding.only(top=6)),
+                ]
+            )
+        )
+
+        return oobi
+    
     def panel(self):
         orr = OobiResolver(self.app, self.callback, self.error_callback)
         return ft.Container(
             content=ft.Column([
                 ft.Text('Connect with Contact', size=24), 
                 orr.render(),
-                ft.Row([
+                ft.Container(
+                    content=ft.Column([
                     ft.Text(
                         'Your Identifier',
                         weight=FontWeight.BOLD,
@@ -71,27 +136,13 @@ class ConnectWithContactPanel(ContactBase):
                     ft.Text(
                         f'{self.hab.name} | {self.hab.pre}',
                     ),
+                    ft.Container(
+                        content=self.oobiTabs,
+                    ),
                 ]),
+                ),
             ]),
             expand=True,
             alignment=ft.alignment.top_left,
             padding=ft.padding.only(left=10, top=15),
         )
-
-    def generate_oobi(self, e):
-        hab = self.app.hby.habByPre(e)
-
-        if not hab.kever.wits:
-            return []
-
-        oobis = []
-        for wit in hab.kever.wits:
-            urls = hab.fetchUrls(eid=wit, scheme=kering.Schemes.http) or hab.fetchUrls(eid=wit, scheme=kering.Schemes.https)
-            if not urls:
-                return []
-
-            url = urls[kering.Schemes.http] if kering.Schemes.http in urls else urls[kering.Schemes.https]
-            up = urlparse(url)
-            oobis.append(urljoin(up.geturl(), f'/oobi/{hab.pre}/witness/{wit}'))
-
-        return oobis

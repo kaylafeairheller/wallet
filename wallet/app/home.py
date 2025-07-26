@@ -61,7 +61,7 @@ class Home(HomeBase):
                 padding=15,
                 bgcolor=ft.colors.SURFACE_VARIANT,
                 border_radius=10,
-                width=300,
+                width=290,
                 height=180,
             )
 

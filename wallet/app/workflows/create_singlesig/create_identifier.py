@@ -56,15 +56,7 @@ class CreateSingleSigIdentifierPanel(IdentifierBase):
         # Select witnesses and set threshold
         wit_thold = self.recommendedThold(len(self.witnessList))
         kwargs['toad'] = wit_thold
-        kwargs['wits'] = []
-
-        count = 0
-        for wit in self.witnessList:
-            if count >= wit_thold:
-                break
-
-            kwargs['wits'].append(wit['key'])
-            count += 1
+        kwargs['wits'] = [wit['key'] for wit in self.witnessList]
         
         hab = self.app.hby.makeHab(name=self.alias.value, **kwargs)
         serder, _, _ = hab.getOwnEvent(sn=0)
