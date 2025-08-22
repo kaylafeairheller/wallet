@@ -71,8 +71,8 @@ class CreateContactPanel(ContactBase):
     def load_witnesses(self):
         return [ft.dropdown.Option(wit['id']) for wit in self.app.witnesses]
 
-    async def callback(self, result):
-        logger.info('callback: %s', result)
+    async def callback(self, aid, alias):
+        logger.info(f'callback: {aid}, {alias}')
         self.app.page.route = '/contacts'
         await self.app.page.update_async()
 
