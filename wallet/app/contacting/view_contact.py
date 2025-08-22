@@ -345,6 +345,8 @@ class ViewContactPanel(ContactBase):
         ims = hab.endorse(serder=exn, last=False, pipelined=False)
         del ims[: exn.size]
 
+        print(exn.pretty())
+
         senderHab = hab.mhab if isinstance(hab, GroupHab) else hab
 
         self.app.agent.postman.send(src=senderHab.pre, dest=self.contact['id'], topic='challenge', serder=exn, attachment=ims)

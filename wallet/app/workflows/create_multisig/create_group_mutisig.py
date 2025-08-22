@@ -13,10 +13,22 @@ class CreateMutisigPanel(IdentifierBase):
     CreateMutisigPanel class for creating a Group Multisig with two given identifiers.
     """
         
-    def __init__(self, app, hab, contact):
+    def __init__(self, app, hab, alias, aid):
         self.app = app
         self.hab = hab
-        self.contact = contact
+        # self.org = app.agent.org
+        
+        self.contact = f'{alias} | {aid}'
+
+        # print("ALIAS IS HERE", self.alias)
+
+        # cts = self.org.find('alias', self.alias)
+        # if len(cts) > 1:
+        #     logger.error(f'OOBI resolve failed: multiple contacts found for alias {self.alias}')
+        #     return False
+        # self.aid = cts[0]['id']
+        
+        # self.contact = f'{self.alias} | {self.aid}'
 
         self.order = ["yours", "theirs"]  # Default order
         self.lead = ft.Column()

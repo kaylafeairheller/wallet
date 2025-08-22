@@ -26,7 +26,6 @@ class ConnectWithContactPanel(ContactBase):
         self.app = app
         self.hab = hab
 
-        self.alias = "foo"
         self.oobiTabs = ft.Column()
         self.oobi_qr = ft.Image(
             src='',
@@ -35,21 +34,13 @@ class ConnectWithContactPanel(ContactBase):
         self.oobi_copy = ft.IconButton()
 
         self.oobi_url = self.generate_oobi()
-        print("got the oobi, now what?", self.oobi_url)
-
-        # TODO figure out how to use the alias and oobi that the user enters on this screen
-        print("checking")
-        print(self.alias, self.oobi)
-
-        self.contact = f'{self.alias} | {self.oobi.split("/oobi/")[1].split("/")[0]}'
 
         self.verified = ft.Icon(ft.icons.SHIELD_OUTLINED, size=32, color=Colouring.get(Colouring.RED))
         super(ConnectWithContactPanel, self).__init__(app=app, panel=self.panel())
 
-    async def callback(self, result):
-        logger.info('callback: %s', result)
-        print("GOING TO CREATE MULTISIG SCREEN")
-        route = f'/workflows/multisig/identifiers/{self.hab.pre}/contacts/{self.contact}/multisig/create'
+    async def callback(self, aid, alias):
+        logger.info('callback: %s %s', aid, alias)
+        route = f'/workflows/multisig/identifiers/{self.hab.pre}/contacts/{alias}/{aid}/challenge'
         print(route)
         self.app.page.route = route
         await self.app.page.update_async()

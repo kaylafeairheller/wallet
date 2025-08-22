@@ -7,6 +7,7 @@ from wallet.app import contacting, identifying, settings, splashing
 from wallet.app.workflows.create_singlesig.create_identifier import CreateSingleSigIdentifierPanel
 from wallet.app.workflows.create_multisig.create_identifier import CreateMultiSigIdentifierPanel
 from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
+from wallet.app.workflows.create_multisig.challenge_response import MultisigChallengeResponsePanel
 from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMutisigPanel
 from wallet.app.workflows.accept_delegation.accept_delegation import CreateAcceptDelegationPanel
 from wallet.app.workflows.issue_ecr.issue_ecr_auth import CreateIssueECRAuthPanel
@@ -199,9 +200,18 @@ class Layout(ft.Row):
         await self.navbar.update_async()
         await self.update_async()
 
-    async def set_create_multisig(self, prefix, contact):
+    async def set_multisig_challenge(self, prefix, alias, aid):
         hab = self.app.hby.habs[prefix]
-        self.active_view = CreateMutisigPanel(self.app, hab, contact)
+        self.active_view = MultisigChallengeResponsePanel(self.app, hab, alias, aid)
+        self.navbar.rail.selected_index = Navbar.HOME
+        self.page.floating_action_button = None
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_create_multisig(self, prefix, alias, aid):
+        hab = self.app.hby.habs[prefix]
+        self.active_view = CreateMutisigPanel(self.app, hab, alias, aid)
         self.navbar.rail.selected_index = Navbar.HOME
         self.page.floating_action_button = None
 

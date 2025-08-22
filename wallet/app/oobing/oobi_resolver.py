@@ -37,6 +37,8 @@ class OobiResolver(Component):
         """
         super().__init__()
         self.app = app
+        self.org = app.agent.org
+        
         self.callback = callback
         self.err_cb = err_cb
 
@@ -116,12 +118,19 @@ class OobiResolver(Component):
     @log_errors
     async def on_service_success(self):
         await self.app.snack(f'{self.alias} resolved')
+
+        cts = self.org.find('alias', self.alias)
+        if len(cts) > 1:
+            logger.error(f'OOBI resolve failed: multiple contacts found for alias {self.alias}')
+            return False
+        self.aid = cts[0]['id']
+
         self.reset()
         if self.callback is not None:
             if inspect.iscoroutinefunction(self.callback):
-                await self.callback(self.oobi)
+                await self.callback(self.aid, self.alias)
             else:
-                self.callback(self.oobi)
+                self.callback(self.aid, self.alias)
 
     @log_errors
     async def on_service_fail(self):
