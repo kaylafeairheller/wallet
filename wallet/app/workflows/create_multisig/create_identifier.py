@@ -3,7 +3,7 @@ import logging
 import flet as ft
 from flet_core import FontWeight, padding
 from keri.app import connecting
-from keri.core import coring
+from keri.core import coring, signing
 
 from wallet.app.identifying.identifier import IdentifierBase
 
@@ -45,7 +45,7 @@ class CreateMultiSigIdentifierPanel(IdentifierBase):
             return
 
         kwargs = dict(algo='salty')
-        kwargs['salt'] = coring.Salter(raw=coring.randomNonce()[2:23].encode('utf-8')).qb64
+        kwargs['salt'] = signing.Salter(raw=coring.randomNonce()[2:23].encode('utf-8')).qb64
         kwargs['icount'] = 1
         kwargs['isith'] = 1
         kwargs['ncount'] = 1

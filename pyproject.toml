@@ -9,18 +9,17 @@ authors = [
 ]
 readme = "README.md"
 keywords = ["GLEIF", "GAR", "cryptography", "KERI", "ACDC"]
-requires-python = ">=3.11.6"
+requires-python = ">=3.12.6"
 dependencies = [
     "dataclasses-json==0.6.7",
     "flet==0.24.1",
-    "cit-hio==0.6.14",
-    "cit-keri==1.1.26",
     "mnemonic==0.21",
     "multicommand==1.0.0",
     "pillow==11.0.0",
     "toml==0.10.2",
     "qrcode[pil]==7.4.2",
     "uvloop==0.21.0",
+    "keri==1.2.6",
 ]
 
 [project.urls]

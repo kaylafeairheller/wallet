@@ -47,7 +47,7 @@ class Agent(doing.DoDoer):
         self.hby = hby
         self.rgy = rgy
 
-        self.swain = delegating.Sealer(hby=hby)
+        self.swain = delegating.Anchorer(hby=hby)
         self.counselor = grouping.Counselor(hby=hby, swain=self.swain)
         self.org = connecting.Organizer(hby=hby)
 

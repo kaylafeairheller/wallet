@@ -7,7 +7,7 @@ import logging
 import flet as ft
 from keri import kering
 from keri.app import configing, directing, habbing
-from keri.core import coring
+from keri.core import coring, signing
 
 from wallet import walleting
 from wallet.app.colouring import Colouring
@@ -108,7 +108,7 @@ class AgentInitialization(ft.AlertDialog):
         )
         kwa = dict()
 
-        kwa['salt'] = coring.Salter(raw=self.app.salt.encode('utf-8')).qb64
+        kwa['salt'] = signing.Salter(raw=self.app.salt.encode('utf-8')).qb64
         kwa['bran'] = self.passcode.value
         kwa['algo'] = self.app.algo
         kwa['tier'] = self.app.tier

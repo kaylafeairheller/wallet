@@ -7,7 +7,7 @@ import logging
 import flet as ft
 from flet_core import FontWeight, padding
 from keri.app import connecting
-from keri.core import coring
+from keri.core import coring, signing
 
 from wallet.app.identifying.identifier import IdentifierBase
 from wallet.core.configing import Environments
@@ -386,7 +386,7 @@ class CreateIdentifierPanel(IdentifierBase):
                 await self.app.snack('Salt is required and must be 21 characters long')
                 return
 
-            kwargs['salt'] = coring.Salter(raw=self.salt.value.encode('utf-8')).qb64
+            kwargs['salt'] = signing.Salter(raw=self.salt.value.encode('utf-8')).qb64
             kwargs['icount'] = int(self.keyCount.value)
             kwargs['isith'] = int(self.keySith.value)
             kwargs['ncount'] = int(self.nkeyCount.value)
