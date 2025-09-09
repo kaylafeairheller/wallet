@@ -53,34 +53,53 @@ class Home(HomeBase):
         def make_tile(title, subtitle, button_text, handler):
             return ft.Container(
                 content=ft.Column([
-                    ft.Text(title, style="headlineSmall"),
-                    ft.Text(subtitle, style="bodyMedium"),
+                    ft.Text(title, style="titleMedium"),
                     ft.ElevatedButton(text=button_text, on_click=handler)
                 ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=10),
                 padding=15,
                 bgcolor=ft.colors.SURFACE_VARIANT,
                 border_radius=10,
-                width=290,
-                height=180,
+                width=280,
+                height=140,
             )
 
         row1 = ft.Row([
-            make_tile("Create Singlesig Identifier", "For individuals", "Create Singlesig", self.create_singlesig),
-            make_tile("Create Group Multisig Identifier", "For multisig groups", "Create Multisig", self.create_multisig),
+            make_tile("Create Singlesig Identifier", "For individuals", "Create", self.create_singlesig),
+            make_tile("Create Group Multisig Identifier", "For multisig groups", "Create", self.create_multisig),
+            make_tile("Accept Delegation", "Accept delegation from another party", "Accept", self.accept_delegation),
         ], spacing=15, )
 
         row2 = ft.Row([
-            make_tile("Accept Delegation", "Accept delegation from another party", "Accept Delegation", self.accept_delegation),
+            make_tile("Issue QVI Credential", "Qualified vLEI Issuer", "Issue", self.issue_qvi),
+            ft.Container(
+                content=ft.Icon(ft.icons.ARROW_FORWARD, size=36, color=ft.colors.ON_SURFACE_VARIANT),
+                alignment=ft.alignment.center,
+            ),
+            make_tile("Issue LE Credential", "Qualified vLEI Issuer", "Issue", self.issue_le_credential),
         ], spacing=15)
 
         row3 = ft.Row([
-            make_tile("Issue QVI Credential", "Qualified vLEI Issuer", "Issue QVI", self.issue_qvi),
-            make_tile("Issue OOR Auth Credential", "Organizational Official Role", "Issue OOR Auth", self.issue_oor_auth),
-            make_tile("Issue ECR Auth Credential", "Entity Credentials Registry", "Issue ECR Auth", self.issue_ecr_auth),
+            make_tile("Issue OOR Authorization", "Organizational Official Role", "Issue", self.issue_oor_auth),
+            ft.Container(
+                content=ft.Icon(ft.icons.ARROW_FORWARD, size=36, color=ft.colors.ON_SURFACE_VARIANT),
+                alignment=ft.alignment.center,
+            ),
+            make_tile("Issue OOR Credential", "Organizational Official Role", "Issue", self.issue_oor_credential),
         ], spacing=15)
 
-        layout = ft.Column([row1, row2, row3], spacing=15, expand=True)
+        row4 = ft.Row([
+            make_tile("Issue ECR Authorization", "Entity Credentials Registry", "Issue", self.issue_ecr_auth),
+            ft.Container(
+                content=ft.Icon(ft.icons.ARROW_FORWARD, size=36, color=ft.colors.ON_SURFACE_VARIANT),
+                alignment=ft.alignment.center,
+            ),
+            make_tile("Issue ECR Credential", "Entity Credentials Registry", "Issue", self.issue_ecr_credential),
+        ], spacing=15)
+
+        layout = ft.Column([row1, row2, row3, row4], spacing=15, expand=True)
 
         super().__init__(app, ft.Container(content=layout, padding=padding.only(bottom=125)))
 
@@ -101,12 +120,24 @@ class Home(HomeBase):
 
     async def issue_qvi(self, e):
         print(f"Beginning {e.control.text}")
-        self.app.page.route = '/workflows/issue/qvi'
+        self.app.page.route = '/workflows/issue/qvi_credential'
+
+    async def issue_le_credential(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/workflows/issue/le_credential'
 
     async def issue_ecr_auth(self, e):
         print(f"Beginning {e.control.text}")
-        self.app.page.route = '/workflows/issue/ecr'
+        self.app.page.route = '/workflows/issue/ecr_auth'
 
     async def issue_oor_auth(self, e):
         print(f"Beginning {e.control.text}")
-        self.app.page.route = '/workflows/issue/oor'
+        self.app.page.route = '/workflows/issue/oor_auth'
+
+    async def issue_ecr_credential(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/workflows/issue/ecr_credential'
+
+    async def issue_oor_credential(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/workflows/issue/oor_credential'

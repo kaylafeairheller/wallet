@@ -10,9 +10,12 @@ from wallet.app.workflows.create_multisig.connect_contact import ConnectWithCont
 from wallet.app.workflows.create_multisig.challenge_response import MultisigChallengeResponsePanel
 from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMutisigPanel
 from wallet.app.workflows.accept_delegation.accept_delegation import CreateAcceptDelegationPanel
-from wallet.app.workflows.issue_ecr.issue_ecr_auth import CreateIssueECRAuthPanel
-from wallet.app.workflows.issue_oor.issue_oor_auth import CreateIssueOORAuthPanel
-from wallet.app.workflows.issue_qvi.issue_qvi import CreateIssueQVIPanel
+from wallet.app.workflows.issuing.issue_ecr_auth import CreateIssueECRAuthPanel
+from wallet.app.workflows.issuing.issue_oor_auth import CreateIssueOORAuthPanel
+from wallet.app.workflows.issuing.issue_ecr_credential import CreateIssueECRCredentialPanel
+from wallet.app.workflows.issuing.issue_oor_credential import CreateIssueOORCredentialPanel
+from wallet.app.workflows.issuing.issue_qvi_credential import CreateIssueQVIPanel
+from wallet.app.workflows.issuing.issue_le_credential import CreateIssueLECredentialPanel
 from wallet.app.contacting.create_contact import CreateContactPanel
 from wallet.app.contacting.view_contact import ViewContactPanel
 from wallet.app.identifying.create_identifier import CreateIdentifierPanel
@@ -225,8 +228,15 @@ class Layout(ft.Row):
         await self.navbar.update_async()
         await self.update_async()
 
-    async def set_issue_qvi(self):
+    async def set_issue_qvi_credential(self):
         self.active_view = CreateIssueQVIPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_issue_le_credential(self):
+        self.active_view = CreateIssueLECredentialPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
         await self.navbar.update_async()
@@ -239,8 +249,22 @@ class Layout(ft.Row):
         await self.navbar.update_async()
         await self.update_async()
 
+    async def set_issue_ecr_credential(self):
+        self.active_view = CreateIssueECRCredentialPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
+
+        await self.navbar.update_async()
+        await self.update_async()
+
     async def set_issue_oor_auth(self):
         self.active_view = CreateIssueOORAuthPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_issue_oor_credential(self):
+        self.active_view = CreateIssueOORCredentialPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
         await self.navbar.update_async()

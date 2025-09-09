@@ -167,12 +167,18 @@ class WalletApp(ft.Stack):
             await self.layout.set_create_multisig(tr.prefix, tr.alias, tr.aid)
         elif tr.match('/workflows/delegation/accept'):
             await self.layout.set_accept_delegation()
-        elif tr.match('/workflows/issue/ecr'):
+        elif tr.match('/workflows/issue/ecr_auth'):
             await self.layout.set_issue_ecr_auth()
-        elif tr.match('/workflows/issue/oor'):
+        elif tr.match('/workflows/issue/ecr_credential'):
+            await self.layout.set_issue_ecr_credential()
+        elif tr.match('/workflows/issue/oor_auth'):
             await self.layout.set_issue_oor_auth()
-        elif tr.match('/workflows/issue/qvi'):
-            await self.layout.set_issue_qvi()
+        elif tr.match('/workflows/issue/oor_credential'):
+            await self.layout.set_issue_oor_credential()
+        elif tr.match('/workflows/issue/qvi_credential'):
+            await self.layout.set_issue_qvi_credential()
+        elif tr.match('/workflows/issue/le_credential'):
+            await self.layout.set_issue_le_credential()
         elif tr.match('/splash'):
             logger.info('Route change to /splash')
             await self.layout.set_splash_view()
