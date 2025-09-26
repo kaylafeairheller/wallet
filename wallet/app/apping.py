@@ -141,6 +141,8 @@ class WalletApp(ft.Stack):
             await self.layout.set_contact_create()
         elif tr.match('/contacts/:prefix/view'):
             await self.layout.set_contact_view(tr.prefix)
+        elif tr.match('/credentials'):
+            await self.layout.set_credentials_list()
         elif tr.match('/settings'):
             await self.layout.set_settings_view()
         elif tr.match('/notifications'):

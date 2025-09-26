@@ -8,6 +8,7 @@ import flet as ft
 from keri import kering
 from keri.app import configing, directing, habbing
 from keri.core import coring, signing
+from keri.vdr import credentialing
 
 from wallet import walleting
 from wallet.app.colouring import Colouring
@@ -120,6 +121,8 @@ class AgentInitialization(ft.AlertDialog):
             cf=cf,
             **kwa,
         )
+
+        self.rgy = credentialing.Regery(hby=hby)
 
         directing.runController([oobiing.OOBILoader(hby=hby)])
         directing.runController([oobiing.OOBIAuther(hby=hby)])

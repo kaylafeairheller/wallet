@@ -3,7 +3,7 @@ import logging
 import flet as ft
 from keri.app import connecting, habbing
 
-from wallet.app import contacting, identifying, settings, splashing
+from wallet.app import contacting, identifying, settings, splashing, credentialing
 from wallet.app.workflows.create_singlesig.create_identifier import CreateSingleSigIdentifierPanel
 from wallet.app.workflows.create_multisig.create_identifier import CreateMultiSigIdentifierPanel
 from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
@@ -42,6 +42,7 @@ class Layout(ft.Row):
         self.notifications = Notifications(app)
         self.identifiers = identifying.Identifiers(app)
         self.contacts = contacting.Contacts(app)
+        self.credentials = credentialing.Credentials(app)
         self.settings = settings.Settings(app)
         self.witnesses = Witnesses(app=self.app)
         self.splash = splashing.Splash(app)
@@ -150,6 +151,14 @@ class Layout(ft.Row):
 
         await self.navbar.update_async()
         await self.page.update_async()
+
+    async def set_credentials_list(self):
+        self.active_view = self.credentials
+        self.page.floating_action_button = None
+        self.navbar.rail.selected_index = Navbar.CREDENTIALS
+
+        await self.navbar.update_async()
+        await self.update_async()
 
     async def set_settings_view(self):
         self.active_view = self.settings
