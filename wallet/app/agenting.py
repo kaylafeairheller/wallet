@@ -122,7 +122,9 @@ class AgentInitialization(ft.AlertDialog):
             **kwa,
         )
 
-        self.rgy = credentialing.Regery(hby=hby)
+        # self.rgy = credentialing.Regery(hby=hby)
+        # self.rgy = credentialing.Regery(hby=self.hby, name=self.name, base=self.base)
+        # self.vry = verifying.Verifier(hby=self.hby, reger=self.rgy.reger)
 
         directing.runController([oobiing.OOBILoader(hby=hby)])
         directing.runController([oobiing.OOBIAuther(hby=hby)])

@@ -222,6 +222,7 @@ class Layout(ft.Row):
         await self.update_async()
 
     async def set_create_multisig(self, prefix, alias, aid):
+        print("PREFIX", prefix)
         hab = self.app.hby.habs[prefix]
         self.active_view = CreateMutisigPanel(self.app, hab, alias, aid)
         self.navbar.rail.selected_index = Navbar.HOME

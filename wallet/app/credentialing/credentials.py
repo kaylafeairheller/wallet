@@ -8,6 +8,7 @@ import flet as ft
 
 from wallet.app import colouring
 from wallet.app.credentialing.credential import CredentialBase
+from wallet.app.identifying.identifiers import Identifiers
 from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
@@ -22,6 +23,7 @@ class Credentials(CredentialBase):
     """
 
     def __init__(self, app):
+        self.app = app
         self.page: ft.Page = app.page
         self.list = ft.Column([], spacing=0, expand=True)
 
@@ -44,27 +46,44 @@ class Credentials(CredentialBase):
         """
         self.list.controls.clear()
 
-        habs = self.app.agent.hby.habs.values()
+        # habs = self.app.agent.hby.habs.values()
+        
+        # hab = self.app.agent.hby.habs[prefix]
 
-        if len(habs) == 0:
-            self.list.controls.append(
-                ft.Container(
-                    content=ft.Text(
-                        'No credentials found.',
-                    ),
-                    padding=ft.padding.all(20),
-                )
-            )
-        else:
-            for hab in habs:
+        # if len(habs) == 0:
+        #     self.list.controls.append(
+        #         ft.Container(
+        #             content=ft.Text(
+        #                 'No credentials found.',
+        #             ),
+        #             padding=ft.padding.all(20),
+        #         )
+        #     )
+        # else:
+            # for hab in habs:
+
+        # habs = Identifiers.get_habs(self.app.agent)
+        for pre in self.app.agent.hby.habs:
+            hab = self.app.agent.hby.habByPre(pre)
+            print(hab)
+            
+            saids = self.app.agent.rgy.reger.subjs.get(keys=hab.pre)
+            print(saids)
+            print(hab.db)
+            # creds = self.app.agent.rgy.reger.cloneCreds(saids, hab.db)
+
+            for s in saids:
                 tip = 'Credential'
                 icon = ft.icons.LOCK_OUTLINED
 
-                saids = self.app.agent.rgy.reger.issus.get(keys=hab.pre)
-                saids.append(self.app.agent.rgy.reger.subjs.get(keys=hab.pre))
+                print(s)
 
-                for said in saids:
-                    print(said)
+                # saids = self.app.agent.rgy.reger.issus.get(keys=hab.pre)
+                # scads = self.app.agent.rgy.reger.schms.get(keys=self.schema)
+                # saids = [saider for saider in saids if saider.qb64 in [saider.qb64 for saider in scads]]
+
+                # for said in saids:
+                #     print(said)
 
                 # Bug in FLET that doesn't set `data` in constructor
                 view = ft.PopupMenuItem(text='View', icon=ft.icons.PAGEVIEW, on_click=self.view_credential)
