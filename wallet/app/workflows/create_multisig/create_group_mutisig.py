@@ -1,9 +1,10 @@
 import logging
+import json
 
 import flet as ft
 from flet_core import FontWeight
 from keri.core import coring, signing
-from keri.app import forwarding, grouping
+from keri.app import connecting, grouping
 
 from  ordered_set import OrderedSet as oset
 from wallet.logs import log_errors
@@ -12,18 +13,38 @@ from wallet.app.identifying.identifier import IdentifierBase
 logger = logging.getLogger('wallet')
 
 
-class CreateMutisigPanel(IdentifierBase):
+class CreateMultisigIdentifierPanel(IdentifierBase):
     """
     CreateMutisigPanel class for creating a Group Multisig with two given identifiers.
     """
         
-    def __init__(self, app, hab, alias, aid):
+    def __init__(self, app):
         self.app = app
-        self.hab = hab
+        self.org = connecting.Organizer(hby=app.agent.hby)
+
+        print("WITNESSES", app.witnesses)
+
+        org = connecting.Organizer(hby=app.agent.hby)
+        print("CONTACTS", org.list())
+        # self.hab = hab
         # self.postman = forwarding.Poster(hby=self.app.hby)
         # self.counselor = grouping.Counselor(hby=self.app.hby)
+
+        self.identifiersDropdown = ft.Dropdown(
+            options=self.loadIdentifiers(app),
+            width=550,
+            text_size=14,
+            text_style=ft.TextStyle(font_family='monospace'),
+        )
+
+        self.contactsDropdown = ft.Dropdown(
+            options=self.loadContacts(app),
+            width=550,
+            text_size=14,
+            text_style=ft.TextStyle(font_family='monospace'),
+        )
         
-        self.contact = f'{alias} | {aid}'
+        # self.contact = f'{alias} | {aid}'
 
         # print("ALIAS IS HERE", self.alias)
 
@@ -58,10 +79,10 @@ class CreateMutisigPanel(IdentifierBase):
             value='2',
         )
 
-        self.smids = [hab.pre, aid]
+        # self.smids = [hab.pre, aid]
 
         super().__init__(app=app, panel=self.panel())
-        self.refresh_fields()
+        # self.refresh_fields()
 
     @staticmethod
     def loadWitnesses(app):
@@ -74,6 +95,32 @@ class CreateMutisigPanel(IdentifierBase):
             for wit in app.witnesses
         ]
     
+    @staticmethod
+    def loadIdentifiers(app):
+        return [
+            ft.dropdown.Option(
+                key=hab.pre,
+                text=f'{hab.name} | {hab.pre}' if hab.name else f'{hab.pre}',
+                data=hab,
+            )
+            for hab in app.agent.hby.habs.values()
+        ]
+    
+    @staticmethod
+    def loadContacts(app):
+        org = connecting.Organizer(hby=app.agent.hby)
+        contacts = org.list()
+        contacts = sorted(contacts, key=lambda c: c['alias'])
+        contacts = list(filter(lambda c: 'tag=witness' not in c['oobi'], contacts))
+        return [
+            ft.dropdown.Option(
+                key=contact["id"],
+                text=f'{contact["alias"]} | {contact["id"]}' if contact['alias'] else f'{contact["id"]}',
+                data=contact,
+            )
+            for contact in contacts
+        ]
+
     @staticmethod
     def recommendedThold(numWits):
         match numWits:
@@ -96,6 +143,16 @@ class CreateMutisigPanel(IdentifierBase):
 
     @log_errors
     async def create(self, _):
+        if self.multisig_alias.value == '':
+            await self.app.snack('Alias is required')
+            return
+        
+        identifier = self.app.hby.habs[self.identifiersDropdown.value]
+        contact = self.org.get(self.contactsDropdown.value)
+
+        self.mhab = identifier
+        self.smids = [identifier.pre, contact['id']]
+        
         kwargs = dict()
         kwargs['estOnly'] = False
         kwargs['DnD'] = False
@@ -115,7 +172,7 @@ class CreateMutisigPanel(IdentifierBase):
         print("WITNESSES")
         print(kwargs['wits'])
 
-        ghab = self.app.hby.makeGroupHab(group=self.multisig_alias.value, mhab=self.hab, smids=self.smids,
+        ghab = self.app.hby.makeGroupHab(group=self.multisig_alias.value, mhab=self.mhab, smids=self.smids,
                                         rmids=self.smids, **kwargs)
 
         icp = ghab.makeOwnInception(allowPartiallySigned=True)
@@ -157,28 +214,28 @@ class CreateMutisigPanel(IdentifierBase):
         self.app.page.route = '/home'
         await self.page.update_async()
 
-    def refresh_fields(self):
-        """Update the field layout based on current order."""
-        self.lead.controls.clear()
-        self.lead.controls.append(self.get_column(self.order[0]))
-        self.recipient.controls.clear()
-        self.recipient.controls.append(self.get_column(self.order[1]))
+    # def refresh_fields(self):
+    #     """Update the field layout based on current order."""
+    #     self.lead.controls.clear()
+    #     self.lead.controls.append(self.get_column(self.order[0]))
+    #     self.recipient.controls.clear()
+    #     self.recipient.controls.append(self.get_column(self.order[1]))
 
-    def get_column(self, label):
-        if label == "yours":
-            return ft.Row(
-                    [
-                        ft.Text('Your Identifier', weight=FontWeight.BOLD),
-                        ft.Text(f'{self.hab.name} | {self.hab.pre}'),
-                    ]
-                )
-        elif label == "theirs":
-            return ft.Row(
-                    [
-                        ft.Text('Connecting Identifier', weight=FontWeight.BOLD),
-                        ft.Text(self.contact),
-                    ]
-                )
+    # def get_column(self, label):
+    #     if label == "yours":
+    #         return ft.Row(
+    #                 [
+    #                     ft.Text('Your Identifier', weight=FontWeight.BOLD),
+    #                     ft.Text(f'{self.hab.name} | {self.hab.pre}'),
+    #                 ]
+    #             )
+    #     elif label == "theirs":
+    #         return ft.Row(
+    #                 [
+    #                     ft.Text('Connecting Identifier', weight=FontWeight.BOLD),
+    #                     ft.Text(self.contact),
+    #                 ]
+    #             )
 
     def swap_order(self, _):
         """Swap identifier order."""
@@ -203,22 +260,22 @@ class CreateMutisigPanel(IdentifierBase):
                         ]
                     ),
                     ft.Text(
-                        'Lead',
+                        'Select your Identifier',
                         weight=FontWeight.BOLD,
                         size=18
                     ),
-                    self.lead,
+                    self.identifiersDropdown,
                     ft.Text(
-                        'Recipient',
+                        'Select your Contact',
                         weight=FontWeight.BOLD,
                         size=18
                     ),
-                    self.recipient,
-                    ft.Row(
-                        [
-                            ft.TextButton("Swap Order", on_click=self.swap_order),
-                        ]
-                    ),
+                    self.contactsDropdown,
+                    # ft.Row(
+                    #     [
+                    #         ft.TextButton("Swap Order", on_click=self.swap_order),
+                    #     ]
+                    # ),
                     self.keySith,
                     ft.Row(
                         [

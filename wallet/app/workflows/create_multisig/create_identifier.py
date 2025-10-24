@@ -10,7 +10,7 @@ from wallet.app.identifying.identifier import IdentifierBase
 logger = logging.getLogger('wallet')
 
 
-class CreateMultiSigIdentifierPanel(IdentifierBase):
+class CreateMultiSigPanel(IdentifierBase):
     """
     CreateMultiSigIdentifierPanel class for creating an identifier to use in the Group Multisig workflow.
     """

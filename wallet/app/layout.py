@@ -5,10 +5,10 @@ from keri.app import connecting, habbing
 
 from wallet.app import contacting, identifying, settings, splashing, credentialing
 from wallet.app.workflows.create_singlesig.create_identifier import CreateSingleSigIdentifierPanel
-from wallet.app.workflows.create_multisig.create_identifier import CreateMultiSigIdentifierPanel
+from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMultisigIdentifierPanel
 from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
 from wallet.app.workflows.create_multisig.challenge_response import MultisigChallengeResponsePanel
-from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMutisigPanel
+from wallet.app.workflows.create_multisig.create_identifier import CreateMultiSigPanel
 from wallet.app.workflows.accept_delegation.accept_delegation import CreateAcceptDelegationPanel
 from wallet.app.workflows.issuing.issue_ecr_auth import CreateIssueECRAuthPanel
 from wallet.app.workflows.issuing.issue_oor_auth import CreateIssueOORAuthPanel
@@ -197,11 +197,11 @@ class Layout(ft.Row):
         await self.update_async()
 
     async def set_multisig_identifier_create(self):
-            self.active_view = CreateMultiSigIdentifierPanel(self.app)
-            self.navbar.rail.selected_index = Navbar.HOME
+        self.active_view = CreateMultisigIdentifierPanel(self.app)
+        self.navbar.rail.selected_index = Navbar.HOME
 
-            await self.navbar.update_async()
-            await self.update_async()
+        await self.navbar.update_async()
+        await self.update_async()
 
     async def set_connect_contact(self, prefix):
         hab = self.app.hby.habs[prefix]
@@ -221,15 +221,15 @@ class Layout(ft.Row):
         await self.navbar.update_async()
         await self.update_async()
 
-    async def set_create_multisig(self, prefix, alias, aid):
-        print("PREFIX", prefix)
-        hab = self.app.hby.habs[prefix]
-        self.active_view = CreateMutisigPanel(self.app, hab, alias, aid)
-        self.navbar.rail.selected_index = Navbar.HOME
-        self.page.floating_action_button = None
+    # async def set_create_multisig(self, prefix, alias, aid):
+    #     print("PREFIX", prefix)
+    #     hab = self.app.hby.habs[prefix]
+    #     self.active_view = CreateMutisigPanel(self.app, hab, alias, aid)
+    #     self.navbar.rail.selected_index = Navbar.HOME
+    #     self.page.floating_action_button = None
 
-        await self.navbar.update_async()
-        await self.update_async()
+    #     await self.navbar.update_async()
+    #     await self.update_async()
 
     async def set_accept_delegation(self):
         self.active_view = CreateAcceptDelegationPanel(self.app)
