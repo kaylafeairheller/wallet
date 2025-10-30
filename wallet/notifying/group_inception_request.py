@@ -3,10 +3,11 @@ import logging
 
 import flet as ft
 from keri.core import eventing, serdering
+from keri import kering
 
 from wallet.app.colouring import Colouring
 from wallet.notifying.notification import NotificationsBase
-
+from wallet.logs import log_errors
 logger = logging.getLogger('wallet')
 
 
@@ -119,6 +120,7 @@ class NoticeMultisigGroupInception(NotificationsBase):
     def did_mount(self):
         self.page.run_task(self.get_exchange_message)
 
+    @log_errors
     async def get_exchange_message(self):
         """
         Retrieves the exchange message from the agent's cloner and updates the UI accordingly.
@@ -175,8 +177,9 @@ class NoticeMultisigGroupInception(NotificationsBase):
                 )
             )
         gid = self.ked['a']['gid']
+        print(self.ked)
         self.group_id.value = gid
-        self.group_alias.value = self.app.hby.habs[gid].name
+        # self.group_alias.value = self.app.hby.habs[gid].name
         self.group_info_pacifier.visible = False
         self.group_info.visible = True
         self.btn_join.disabled = False
@@ -211,6 +214,7 @@ class NoticeMultisigGroupInception(NotificationsBase):
             padding=ft.padding.only(left=10, top=15, bottom=100),
         )
 
+    @log_errors
     async def join(self, e):
         """
         Join a group.
@@ -244,8 +248,8 @@ class NoticeMultisigGroupInception(NotificationsBase):
         inits['isith'] = oicp.ked['kt']
         inits['nsith'] = oicp.ked['nt']
 
-        inits['estOnly'] = eventing.TraitCodex.EstOnly in oicp.ked['c']
-        inits['DnD'] = eventing.TraitCodex.DoNotDelegate in oicp.ked['c']
+        inits['estOnly'] = kering.TraitDex.EstOnly in oicp.ked['c']
+        inits['DnD'] = kering.TraitDex.DoNotDelegate in oicp.ked['c']
 
         inits['toad'] = oicp.ked['bt']
         inits['wits'] = oicp.ked['b']

@@ -6,8 +6,9 @@ import logging
 
 import flet as ft
 from flet_core import FontWeight, padding
-from keri.app import connecting
+from keri.app import connecting, grouping
 from keri.core import coring, signing
+from  ordered_set import OrderedSet as oset
 
 from wallet.app.identifying.identifier import IdentifierBase
 from wallet.core.configing import Environments
@@ -375,10 +376,13 @@ class CreateIdentifierPanel(IdentifierBase):
         await self.rotationDropdown.update_async()
         await self.rotationList.update_async()
 
+    @log_errors
     async def createAid(self, _):
         if self.alias.value == '':
             await self.app.snack('Alias is required')
             return
+        
+        self.hab = self.app.hby.habByName(name='harry')
 
         kwargs = dict(algo=self.keyType)
         if self.keyType == 'salty':
@@ -416,6 +420,8 @@ class CreateIdentifierPanel(IdentifierBase):
             else:
                 rmids = smids
 
+            smids.append(self.hab.pre)
+
             kwargs['smids'] = smids
             kwargs['rmids'] = rmids
 
@@ -430,11 +436,37 @@ class CreateIdentifierPanel(IdentifierBase):
             kwargs['delpre'] = self.delegatorDropdown.value
 
         if self.keyType == 'group':
-            hab = self.app.hby.makeGroupHab(name=self.alias.value, **kwargs)
-            serder, _, _ = hab.getOwnEvent(allowPartiallySigned=True)
+            print(kwargs)
+            del kwargs["algo"]
+            ghab = self.app.hby.makeGroupHab(group=self.alias.value, mhab=self.hab, **kwargs)
 
-            self.app.agent.groups.push(dict(serder=serder))
-            await self.app.snack(f'Creating {hab.pre}, waiting for multisig collaboration...')
+            icp = ghab.makeOwnInception(allowPartiallySigned=True)
+
+            # Create a notification EXN message to send to the other agents
+            exn, ims = grouping.multisigInceptExn(ghab.mhab,
+                                                    smids=ghab.smids,
+                                                    rmids=ghab.rmids,
+                                                    icp=icp)
+            others = list(oset(smids))
+
+            others.remove(ghab.mhab.pre)
+
+            for recpt in others:  # this goes to other participants only as a signaling mechanism
+                self.app.agent.postman.send(src=ghab.mhab.pre,
+                                    dest=recpt,
+                                    topic="multisig",
+                                    serder=exn,
+                                    attachment=ims)
+
+            print(f"Group identifier inception initialized for {ghab.pre}")
+            prefixer = coring.Prefixer(qb64=ghab.pre)
+            seqner = coring.Seqner(sn=0)
+            saider = coring.Saider(qb64=prefixer.qb64)
+            self.app.agent.counselor.start(prefixer=prefixer, seqner=seqner, saider=saider,
+                                    ghab=ghab)
+
+
+            await self.app.snack(f'Creating {ghab.pre}, waiting for multisig collaboration...')
         else:
             hab = self.app.hby.makeHab(name=self.alias.value, **kwargs)
             serder, _, _ = hab.getOwnEvent(sn=0)
@@ -619,10 +651,10 @@ class CreateIdentifierPanel(IdentifierBase):
                                                             value='randy',
                                                             label='Random Key',
                                                         ),
-                                                        ft.Radio(
-                                                            value='group',
-                                                            label='Group Multisig',
-                                                        ),
+                                                        # ft.Radio(
+                                                        #     value='group',
+                                                        #     label='Group Multisig',
+                                                        # ),
                                                     ]
                                                 ),
                                                 value='salty',

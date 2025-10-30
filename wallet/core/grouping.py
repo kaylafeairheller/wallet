@@ -93,7 +93,6 @@ class GroupRequester(doing.Doer):
         if self.groups:
             group_op = self.groups.popleft()
             serder = group_op['serder']
-            rot = group_op['rot']
 
             ghab = self.hby.habs[serder.pre]
 
@@ -101,6 +100,7 @@ class GroupRequester(doing.Doer):
                 case coring.Ilks.icp | coring.Ilks.dip:
                     self.multisig_incept(ghab, serder)
                 case coring.Ilks.rot | coring.Ilks.drt:
+                    rot = group_op['rot']
                     self.multisig_rotate(ghab, rot, group_op['smids'], group_op['rmids'])
                 case _:
                     raise ValueError(f'Unsupported or invalid event type {serder.ked["t"]}')
