@@ -9,7 +9,7 @@ from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMult
 from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
 from wallet.app.workflows.create_multisig.challenge_response import MultisigChallengeResponsePanel
 from wallet.app.workflows.create_multisig.create_identifier import CreateMultiSigPanel
-from wallet.app.workflows.accept_delegation.accept_delegation import CreateAcceptDelegationPanel
+from wallet.app.workflows.create_registry.create_registry import CreateRegistryPanel
 from wallet.app.workflows.issuing.issue_ecr_auth import CreateIssueECRAuthPanel
 from wallet.app.workflows.issuing.issue_oor_auth import CreateIssueOORAuthPanel
 from wallet.app.workflows.issuing.issue_ecr_credential import CreateIssueECRCredentialPanel
@@ -231,8 +231,8 @@ class Layout(ft.Row):
     #     await self.navbar.update_async()
     #     await self.update_async()
 
-    async def set_accept_delegation(self):
-        self.active_view = CreateAcceptDelegationPanel(self.app)
+    async def set_create_registry(self):
+        self.active_view = CreateRegistryPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
         await self.navbar.update_async()

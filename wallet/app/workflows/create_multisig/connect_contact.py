@@ -16,7 +16,7 @@ from wallet.app.oobing.oobi_resolver import OobiResolver
 
 logger = logging.getLogger('wallet')
 
-
+#TODO REMOVE
 class ConnectWithContactPanel(ContactBase):
     """
     ConnectWithContactPanel class for creating a contact and connecting it to the given AID.

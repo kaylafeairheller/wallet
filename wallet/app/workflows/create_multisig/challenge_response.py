@@ -12,7 +12,7 @@ from wallet.app.identifying.identifier import IdentifierBase
 
 logger = logging.getLogger('wallet')
 
-
+#TODO REMOVE
 class MultisigChallengeResponsePanel(IdentifierBase):
     """
     MultisigChallengeResponsePanel class for handling challenge/response between contacts in the Create Group Multisig Workflow.

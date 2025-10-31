@@ -62,17 +62,21 @@ class Home(HomeBase):
                 padding=15,
                 bgcolor=ft.colors.SURFACE_VARIANT,
                 border_radius=10,
-                width=280,
-                height=140,
+                width=260,
+                height=110,
             )
 
         row1 = ft.Row([
             make_tile("Create Singlesig Identifier", "For individuals", "Create", self.create_singlesig),
-            make_tile("Create Group Multisig Identifier", "For multisig groups", "Create", self.create_multisig),
-            make_tile("Accept Delegation", "Accept delegation from another party", "Accept", self.accept_delegation),
+            make_tile("Create Contact", "Create a contact to use in multsig identifier", "Create", self.create_contact),
+            make_tile("Create Multisig Identifier", "For multisig groups", "Create", self.create_multisig),
         ], spacing=15, )
 
         row2 = ft.Row([
+            make_tile("Create Registry", "Create registry inn order to issue credentials", "Create", self.create_registry),
+        ], spacing=15, )
+
+        row3 = ft.Row([
             make_tile("Issue QVI Credential", "Qualified vLEI Issuer", "Issue", self.issue_qvi),
             ft.Container(
                 content=ft.Icon(ft.icons.ARROW_FORWARD, size=36, color=ft.colors.ON_SURFACE_VARIANT),
@@ -81,7 +85,7 @@ class Home(HomeBase):
             make_tile("Issue LE Credential", "Qualified vLEI Issuer", "Issue", self.issue_le_credential),
         ], spacing=15)
 
-        row3 = ft.Row([
+        row4 = ft.Row([
             make_tile("Issue OOR Authorization", "Organizational Official Role", "Issue", self.issue_oor_auth),
             ft.Container(
                 content=ft.Icon(ft.icons.ARROW_FORWARD, size=36, color=ft.colors.ON_SURFACE_VARIANT),
@@ -90,7 +94,7 @@ class Home(HomeBase):
             make_tile("Issue OOR Credential", "Organizational Official Role", "Issue", self.issue_oor_credential),
         ], spacing=15)
 
-        row4 = ft.Row([
+        row5 = ft.Row([
             make_tile("Issue ECR Authorization", "Entity Credentials Registry", "Issue", self.issue_ecr_auth),
             ft.Container(
                 content=ft.Icon(ft.icons.ARROW_FORWARD, size=36, color=ft.colors.ON_SURFACE_VARIANT),
@@ -99,7 +103,7 @@ class Home(HomeBase):
             make_tile("Issue ECR Credential", "Entity Credentials Registry", "Issue", self.issue_ecr_credential),
         ], spacing=15)
 
-        layout = ft.Column([row1, row2, row3, row4], spacing=15, expand=True)
+        layout = ft.Column([row1, row2, row3, row4, row5], spacing=15, expand=True)
 
         super().__init__(app, ft.Container(content=layout, padding=padding.only(bottom=125)))
 
@@ -110,13 +114,17 @@ class Home(HomeBase):
         print(f"Beginning {e.control.text}")
         self.app.page.route = '/workflows/singlesig/identifiers/create'
 
+    async def create_contact(self, e):
+        print(f"Beginning {e.control.text}")
+        self.app.page.route = '/contacts/create'
+
     async def create_multisig(self, e):
         print(f"Beginning {e.control.text}")
         self.app.page.route = '/workflows/multisig/identifiers/create'
-
-    async def accept_delegation(self, e):
+    
+    async def create_registry(self, e):
         print(f"Beginning {e.control.text}")
-        self.app.page.route = '/workflows/delegation/accept'
+        self.app.page.route = '/workflows/registry/create'
 
     async def issue_qvi(self, e):
         print(f"Beginning {e.control.text}")

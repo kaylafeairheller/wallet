@@ -9,7 +9,7 @@ from wallet.app.identifying.identifier import IdentifierBase
 
 logger = logging.getLogger('wallet')
 
-
+#TODO REMOVE
 class CreateMultiSigPanel(IdentifierBase):
     """
     CreateMultiSigIdentifierPanel class for creating an identifier to use in the Group Multisig workflow.
@@ -37,7 +37,7 @@ class CreateMultiSigPanel(IdentifierBase):
         )
         self.panel_ref = self.panel()
 
-        super(CreateMultiSigIdentifierPanel, self).__init__(app, self.panel_ref)
+        super(CreateMultiSigPanel, self).__init__(app, self.panel_ref)
 
     async def createAid(self, _):
         if self.alias.value == '':
