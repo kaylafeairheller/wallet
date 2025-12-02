@@ -85,7 +85,6 @@ class Credentials(CredentialBase):
                 # for said in saids:
                 #     print(said)
 
-                # Bug in FLET that doesn't set `data` in constructor
                 view = ft.PopupMenuItem(text='View', icon=ft.icons.PAGEVIEW, on_click=self.view_credential)
                 view.data = hab
                 rotate = ft.PopupMenuItem(

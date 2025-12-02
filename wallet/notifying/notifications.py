@@ -1,11 +1,14 @@
 import logging
 from datetime import datetime
+import json
 
 import flet as ft
 
 from wallet.notifying.group_inception_request import NoticeMultisigGroupInception
 from wallet.notifying.group_rotation_request import NoticeMultisigGroupRotation
+from wallet.notifying.registry_creation_request import NoticeRegistryCreation
 from wallet.notifying.notification import NotificationsBase
+from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
 
@@ -50,6 +53,8 @@ class Notifications(NotificationsBase):
         note = e.control.data
         self.app.agent.notifier.mar(note.rid)
         self.app.agent.noter.update()
+
+        print("ROUTE", note.rid)
 
         self.app.page.route = f'/notifications/{note.rid}'
         await self.app.page.update_async()
@@ -96,6 +101,8 @@ class Notifications(NotificationsBase):
         self.list.controls.clear()
         self.notes = self.app.agent.notifier.getNotes(start=0, end=self.app.agent.notifier.getNoteCnt())
 
+        print("NOTES ARE HERE", self.notes)
+
         if len(self.notes) == 0:
             return ft.Column(
                 [
@@ -107,62 +114,72 @@ class Notifications(NotificationsBase):
         self.notes.sort(key=lambda note: datetime.fromisoformat(note.datetime), reverse=True)
 
         for note in self.notes:
+            print("ONE NOTE", note.pad)
             attrs = note.attrs
             route = attrs['r']
             dt = datetime.fromisoformat(note.datetime)
             dt_fmt = dt.strftime('%Y-%m-%d %I:%M %p')
 
+            print("ATTRS", attrs)
+            print("ROUTE", route)
+            title = 'New Notification'
             match route:
                 case '/multisig/icp':
-                    tile = ft.ListTile(
-                        leading=ft.Icon(ft.icons.PEOPLE_ROUNDED),
-                        title=ft.Text('Group Inception Request'),
-                        subtitle=ft.Text(f'{dt_fmt}'),
-                        trailing=ft.PopupMenuButton(
-                            tooltip=None,
-                            icon=ft.icons.MORE_VERT,
-                            items=[
-                                ft.PopupMenuItem(
-                                    text='View',
-                                    icon=ft.icons.PAGEVIEW,
-                                    data=note,
-                                    on_click=self.route_note,
-                                ),
-                                ft.PopupMenuItem(
-                                    text='Delete', icon=ft.icons.DELETE_FOREVER, on_click=self.delete_note, data=note
-                                ),
-                            ],
-                        ),
-                        data=note,
-                        on_click=self.route_note,
-                        shape=ft.StadiumBorder(),
-                    )
-                    self.list.controls.append(tile)
+                    print("THIS CASE")
+                    title = 'Group Inception Request'
+                    # tile = ft.ListTile(
+                    #     leading=ft.Icon(ft.icons.PEOPLE_ROUNDED),
+                    #     title=ft.Text('Group Inception Request'),
+                    #     subtitle=ft.Text(f'{dt_fmt}'),
+                    #     trailing=ft.PopupMenuButton(
+                    #         tooltip=None,
+                    #         icon=ft.icons.MORE_VERT,
+                    #         items=[
+                    #             ft.PopupMenuItem(
+                    #                 text='View',
+                    #                 icon=ft.icons.PAGEVIEW,
+                    #                 data=note,
+                    #                 on_click=self.route_note,
+                    #             ),
+                    #             ft.PopupMenuItem(
+                    #                 text='Delete', icon=ft.icons.DELETE_FOREVER, on_click=self.delete_note, data=note
+                    #             ),
+                    #         ],
+                    #     ),
+                    #     data=note,
+                    #     on_click=self.route_note,
+                    #     shape=ft.StadiumBorder(),
+                    # )
+                    # self.list.controls.append(tile)
                 case '/multisig/rot':
-                    tile = ft.ListTile(
-                        leading=ft.Icon(ft.icons.PEOPLE_ROUNDED),
-                        title=ft.Text('Group Rotation Request'),
-                        subtitle=ft.Text(f'{dt_fmt}'),
-                        trailing=ft.PopupMenuButton(
-                            tooltip=None,
-                            icon=ft.icons.MORE_VERT,
-                            items=[
-                                ft.PopupMenuItem(
-                                    text='View',
-                                    icon=ft.icons.PAGEVIEW,
-                                    data=note,
-                                    on_click=self.route_note,
-                                ),
-                                ft.PopupMenuItem(
-                                    text='Delete', icon=ft.icons.DELETE_FOREVER, on_click=self.delete_note, data=note
-                                ),
-                            ],
+                    title = 'Group Rotation Request'
+                case '/multisig/vcp':
+                    print("THAT CASE!")
+                    title = 'Registry Creation Request'
+            tile = ft.ListTile(
+                leading=ft.Icon(ft.icons.PEOPLE_ROUNDED),
+                title=ft.Text(title),
+                subtitle=ft.Text(f'{dt_fmt}'),
+                trailing=ft.PopupMenuButton(
+                    tooltip=None,
+                    icon=ft.icons.MORE_VERT,
+                    items=[
+                        ft.PopupMenuItem(
+                            text='View',
+                            icon=ft.icons.PAGEVIEW,
+                            data=note,
+                            on_click=self.route_note,
                         ),
-                        data=note,
-                        on_click=self.route_note,
-                        shape=ft.StadiumBorder(),
-                    )
-                    self.list.controls.append(tile)
+                        ft.PopupMenuItem(
+                            text='Delete', icon=ft.icons.DELETE_FOREVER, on_click=self.delete_note, data=note
+                        ),
+                    ],
+                ),
+                data=note,
+                on_click=self.route_note,
+                shape=ft.StadiumBorder(),
+            )
+            self.list.controls.append(tile)
             self.list.controls.append(ft.Divider(opacity=0.1))
 
         return ft.Column(
@@ -195,3 +212,5 @@ class Notifications(NotificationsBase):
                 return NoticeMultisigGroupInception(self.app, note)
             case '/multisig/rot':
                 return NoticeMultisigGroupRotation(self.app, note)
+            case '/multisig/vcp':
+                return NoticeRegistryCreation(self.app, note)

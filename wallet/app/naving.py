@@ -4,10 +4,11 @@ import flet as ft
 class Navbar(ft.Stack):
     HOME = 0
     IDENTIFIERS = 1
-    CREDENTIALS = 2
-    CONTACTS = 3
-    WITNESSES = 4
-    SETTINGS = 5
+    REGISTRIES = 2
+    CREDENTIALS = 3
+    CONTACTS = 4
+    WITNESSES = 5
+    SETTINGS = 6
 
     def __init__(self, page: ft.Page):
         super().__init__()
@@ -24,6 +25,12 @@ class Navbar(ft.Stack):
                 icon=ft.icons.DATASET_LINKED,
                 selected_icon=ft.icons.DATASET_LINKED_OUTLINED,
                 label='Identifiers',
+                padding=ft.padding.all(10),
+            ),
+            ft.NavigationRailDestination(
+                icon=ft.icons.ACCOUNT_TREE_OUTLINED,
+                selected_icon=ft.icons.ACCOUNT_TREE,
+                label='Registries',
                 padding=ft.padding.all(10),
             ),
             ft.NavigationRailDestination(
@@ -72,6 +79,8 @@ class Navbar(ft.Stack):
             self.page.route = '/home'
         elif index == self.IDENTIFIERS:
             self.page.route = '/identifiers'
+        elif index == self.REGISTRIES:
+            self.page.route = '/registries'
         elif index == self.CREDENTIALS:
             self.page.route = '/credentials'
         elif index == self.CONTACTS:

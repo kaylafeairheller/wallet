@@ -6,10 +6,11 @@ from keri.app import connecting, grouping
 from keri.app.habbing import GroupHab
 from keri.core import coring, serdering, signing
 from keri.core.eventing import SealEvent
-
+from wallet.logs import log_errors
 from wallet.app.identifying.identifier import IdentifierBase
 
 logger = logging.getLogger('wallet')
+import pprint
 
 
 class CreateRegistryPanel(IdentifierBase):
@@ -31,7 +32,7 @@ class CreateRegistryPanel(IdentifierBase):
             label='Registry Name',
             hint_text='Name for new Registry',
         )
-        self.registryUsage = ft.TextField(
+        self.usage = ft.TextField(
             label='Registry Description',
             hint_text='Describe how the Registry will be used.',
         )
@@ -49,26 +50,40 @@ class CreateRegistryPanel(IdentifierBase):
     def loadIdentifiers(app):
         return [
             ft.dropdown.Option(
-                key=hab.pre,
+                key=hab.name,
                 text=f'{hab.name} | {hab.pre}' if hab.name else f'{hab.pre}',
                 data=hab,
             )
             for hab in app.agent.hby.habs.values()
         ]
     
-    def generate_nonce(self):
-        self.nonce = signing.Salter().qb64
+    @log_errors
+    async def generate_nonce(self, _):
+        print("GENERATING")
+        # self.app.agent.rgy.loadRegistries()
+        print(self.app.agent.rgy.regs)
+        rgy = next(iter(self.app.agent.rgy.regs.values()))  # get one Registry object
+        print(dir(rgy))
+        pprint.pprint(rgy.__dict__)
+
+        for r, v in self.app.agent.rgy.regs.items():
+            print("REG", r)
+            pprint.pprint(r)
+            pprint.pprint(v.__dict__)
+            pprint.pprint(v.hab.__dict__)
         return
     
+    @log_errors
     async def create(self, _):
         await self.app.snack(f'Creating registry...')
 
-        hab = self.app.agent.hby.habByName(self.alias)
+        hab = self.app.agent.hby.habByName(self.alias.value)
         if hab is None:
-            raise ValueError(f"{self.alias} is not a valid AID alias")
-
+            raise ValueError(f"{self.alias.value} is not a valid AID alias")
+        
+        self.nonce = signing.Salter().qb64
         # estOnly = "estOnly" in kwa and kwa["estOnly"]
-        registry = self.app.agent.rgy.makeRegistry(name=self.registryName.value, prefix=hab.pre)
+        registry = self.app.agent.rgy.makeRegistry(name=self.registryName.value, prefix=hab.pre, nonce=self.nonce)
 
         rseal = SealEvent(registry.regk, "0", registry.regd)
         rseal = dict(i=rseal.i, s=rseal.s, d=rseal.d)
@@ -78,10 +93,10 @@ class CreateRegistryPanel(IdentifierBase):
         anc = hab.interact(data=[rseal])
 
         aserder = serdering.SerderKERI(raw=bytes(anc))
-        self.registrar.incept(iserder=registry.vcp, anc=aserder)
+        self.app.agent.registrar.incept(iserder=registry.vcp, anc=aserder)
 
         if isinstance(hab, GroupHab):
-            usage = self.usage
+            usage = self.usage.value
             if usage is None:
                 usage = input(f"Please enter a description of the credential registry: ")
 
@@ -90,19 +105,18 @@ class CreateRegistryPanel(IdentifierBase):
 
             for recp in smids:  # this goes to other participants only as a signaling mechanism
                 exn, atc = grouping.multisigRegistryInceptExn(ghab=hab, vcp=registry.vcp.raw, anc=anc, usage=usage)
-                self.postman.send(src=hab.mhab.pre,
+                self.app.agent.postman.send(src=hab.mhab.pre,
                                   dest=recp,
                                   topic="multisig",
                                   serder=exn,
                                   attachment=atc)
 
-        while not self.registrar.complete(pre=registry.regk, sn=0):
-            self.rgy.processEscrows()
-            yield self.tock
+        # while not self.registrar.complete(pre=registry.regk, sn=0):
+        #     self.rgy.processEscrows()
+        #     yield self.tock
 
         print("Registry:  {}({}) \n\tcreated for Identifier Prefix:  {}".format(self.registryName.value,
                                                                                 registry.regk, hab.pre))
-
 
         self.app.page.route = f'/home'
         await self.page.update_async()
@@ -122,7 +136,7 @@ class CreateRegistryPanel(IdentifierBase):
                     ft.Row(
                         [
                             self.registryName,
-                            self.registryUsage,
+                            self.usage,
                         ]
                     ),
                     ft.Text(

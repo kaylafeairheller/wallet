@@ -43,6 +43,7 @@ class Layout(ft.Row):
         self.identifiers = identifying.Identifiers(app)
         self.contacts = contacting.Contacts(app)
         self.credentials = credentialing.Credentials(app)
+        self.registries = credentialing.Registries(app)
         self.settings = settings.Settings(app)
         self.witnesses = Witnesses(app=self.app)
         self.splash = splashing.Splash(app)
@@ -156,6 +157,14 @@ class Layout(ft.Row):
         self.active_view = self.credentials
         self.page.floating_action_button = None
         self.navbar.rail.selected_index = Navbar.CREDENTIALS
+
+        await self.navbar.update_async()
+        await self.update_async()
+
+    async def set_registries_list(self):
+        self.active_view = self.registries
+        self.page.floating_action_button = None
+        self.navbar.rail.selected_index = Navbar.REGISTRIES
 
         await self.navbar.update_async()
         await self.update_async()

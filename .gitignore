@@ -170,3 +170,6 @@ incept.json
 #ignored in favour of poetry.lock, regenrated for flet build
 requirements.txt
 libsodium/libsodium.dylib
+
+# Wallet logs
+wallet.log.*
