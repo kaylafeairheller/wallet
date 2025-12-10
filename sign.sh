@@ -47,7 +47,7 @@ fi
 APP_NAME="wallet"
 APP_VERSION="0.1.0"
 APP_DISPLAY_NAME="Wallet"
-BUILD_DIR="build"
+BUILD_DIR="build/macos"
 MACHINE_OS=$(sw_vers -buildVersion)
 APP_ICON="AppIcon"
 DMG_NAME="$APP_NAME.dmg"
