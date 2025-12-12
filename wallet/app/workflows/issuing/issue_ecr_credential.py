@@ -50,6 +50,27 @@ class CreateIssueECRCredentialPanel(IssuerBase):
             on_change=self.save_selection,
         )
 
+        self.personLegalNameTextField = ft.TextField(
+            label='Person Legal Name',
+            width=550,
+            text_size=14,
+            read_only=True,
+        )
+
+        self.engagementContextRoleTextField = ft.TextField(
+            label='Engagement Context Role',
+            width=550,
+            text_size=14,
+            read_only=True,
+        )
+
+        self.leiTextField = ft.TextField(
+            label='LEI',
+            width=550,
+            text_size=14,
+            read_only=True,
+        )
+
         self.panel_ref = self.panel()
         super(CreateIssueECRCredentialPanel, self).__init__(app, self.panel_ref)
 
@@ -121,7 +142,7 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                             ft.Row(
                                 [
                                     ft.Text(
-                                        'Pick from Contacts',
+                                        'Select recipient',
                                         weight=FontWeight.BOLD,
                                     ),
                                 ]
@@ -129,6 +150,57 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                             ft.Row(
                                 controls=[
                                     self.contactsDropdown,
+                                ],
+                            )
+                        ]
+                    ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'Person Legal Name',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.personLegalNameTextField,
+                                ],
+                            )
+                        ]
+                    ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'Engagement Context Role',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.engagementContextRoleTextField,
+                                ],
+                            )
+                        ]
+                    ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'LEI',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.leiTextField,
                                 ],
                             )
                         ]
@@ -146,7 +218,6 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                         ]
                     ),
                 ],
-                scroll=ft.ScrollMode.AUTO,
             ),
             expand=True,
             alignment=ft.alignment.top_left,

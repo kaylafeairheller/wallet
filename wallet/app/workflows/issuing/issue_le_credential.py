@@ -50,6 +50,12 @@ class CreateIssueLECredentialPanel(IssuerBase):
             on_change=self.save_selection,
         )
 
+        self.leiTextField = ft.TextField(
+            label='LEI',
+            width=550,
+            text_size=14,
+        )
+
         self.panel_ref = self.panel()
         super(CreateIssueLECredentialPanel, self).__init__(app, self.panel_ref)
 
@@ -121,7 +127,7 @@ class CreateIssueLECredentialPanel(IssuerBase):
                             ft.Row(
                                 [
                                     ft.Text(
-                                        'Pick from Contacts',
+                                        'Select recipient',
                                         weight=FontWeight.BOLD,
                                     ),
                                 ]
@@ -129,6 +135,23 @@ class CreateIssueLECredentialPanel(IssuerBase):
                             ft.Row(
                                 controls=[
                                     self.contactsDropdown,
+                                ],
+                            )
+                        ]
+                    ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'LEI',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.leiTextField,
                                 ],
                             )
                         ]
@@ -146,7 +169,6 @@ class CreateIssueLECredentialPanel(IssuerBase):
                         ]
                     ),
                 ],
-                scroll=ft.ScrollMode.AUTO,
             ),
             expand=True,
             alignment=ft.alignment.top_left,

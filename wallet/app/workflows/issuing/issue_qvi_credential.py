@@ -42,6 +42,11 @@ class CreateIssueQVIPanel(IssuerBase):
             on_change=self.save_selection,
         )
 
+        self.qviLEI = ft.TextField(
+            label='LEI',
+            hint_text='LEI of QVI',
+        )
+
         self.panel_ref = self.panel()
         super(CreateIssueQVIPanel, self).__init__(app, self.panel_ref)
 
@@ -96,7 +101,7 @@ class CreateIssueQVIPanel(IssuerBase):
                             ft.Row(
                                 [
                                     ft.Text(
-                                        'Pick from Contacts',
+                                        'Select recipient',
                                         weight=FontWeight.BOLD,
                                     ),
                                 ]
@@ -108,6 +113,23 @@ class CreateIssueQVIPanel(IssuerBase):
                             )
                         ]
                     ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'Enter LEI of QVI',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.qviLEI,
+                                ],
+                            )
+                        ]
+                    ),                    
                     ft.Row(
                         [
                             ft.ElevatedButton(
@@ -121,7 +143,6 @@ class CreateIssueQVIPanel(IssuerBase):
                         ]
                     ),
                 ],
-                scroll=ft.ScrollMode.AUTO,
             ),
             expand=True,
             alignment=ft.alignment.top_left,

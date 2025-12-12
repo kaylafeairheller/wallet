@@ -50,6 +50,33 @@ class CreateIssueOORAuthPanel(IssuerBase):
             on_change=self.save_selection,
         )
 
+        self.leCredentialSaidDropdown = ft.Dropdown(
+            options=IssuerBase.loadLECredentials(),
+            width=550,
+            text_size=14,
+            text_style=ft.TextStyle(font_family='monospace'),
+            on_change=self.save_selection,
+        )
+
+        self.personLegalNameTextField = ft.TextField(
+            label='Enter requested person legal name:',
+            width=550,
+            text_size=14,
+        )
+
+        self.officialRoleTextField = ft.TextField(
+            label='Enter requested official role:',
+            width=550,
+            text_size=14,
+        )
+
+        self.leiTextField = ft.TextField(
+            label='LEI',
+            width=550,
+            text_size=14,
+            read_only=True,
+        )
+
         self.panel_ref = self.panel()
         super(CreateIssueOORAuthPanel, self).__init__(app, self.panel_ref)
 
@@ -121,7 +148,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
                             ft.Row(
                                 [
                                     ft.Text(
-                                        'Pick from Contacts',
+                                        'Select recipient',
                                         weight=FontWeight.BOLD,
                                     ),
                                 ]
@@ -129,6 +156,74 @@ class CreateIssueOORAuthPanel(IssuerBase):
                             ft.Row(
                                 controls=[
                                     self.contactsDropdown,
+                                ],
+                            )
+                        ]
+                    ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'Select LE Edge',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.leCredentialSaidDropdown,
+                                ],
+                            )
+                        ]
+                    ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'LEI',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.leiTextField,
+                                ],
+                            )
+                        ]
+                    ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'Enter requested person legal name:',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.personLegalNameTextField,
+                                ],
+                            )
+                        ]
+                    ),
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        'Enter requested official role:',
+                                        weight=FontWeight.BOLD,
+                                    ),
+                                ]
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.officialRoleTextField,
                                 ],
                             )
                         ]
@@ -146,7 +241,6 @@ class CreateIssueOORAuthPanel(IssuerBase):
                         ]
                     ),
                 ],
-                scroll=ft.ScrollMode.AUTO,
             ),
             expand=True,
             alignment=ft.alignment.top_left,

@@ -53,7 +53,14 @@ class Layout(ft.Row):
         if self.app.agent is None:
             self.navbar.visible = False
 
-        self.controls = [self.navbar, self.active_view]
+        self.view_container = ft.Container(
+            content=self.active_view,
+            expand=True,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+            alignment=ft.alignment.top_left,
+            height=page.window.height - 100 if hasattr(page.window, 'height') and page.window.height else None,
+        )
+        self.controls = [self.navbar, self.view_container]
 
     @property
     def active_view(self):
@@ -62,7 +69,7 @@ class Layout(ft.Row):
     @active_view.setter
     def active_view(self, view):
         self._active_view = view if view else self.splash
-        self.controls[-1] = self._active_view
+        self.view_container.content = self._active_view
 
     async def set_home(self):
         self.active_view = self.home

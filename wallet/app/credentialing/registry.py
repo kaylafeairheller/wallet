@@ -37,7 +37,7 @@ class RegistryBase(ft.Column):
         super().__init__(
             [
                 title,
-                ft.Row([self.card]),
+                self.card,
             ],
             expand=True,
             scroll=ft.ScrollMode.ALWAYS,

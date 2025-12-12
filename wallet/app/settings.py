@@ -16,7 +16,7 @@ class Settings(ft.Column):
             content=self.settings, padding=padding.only(left=10, top=15), expand=True, alignment=ft.alignment.top_left
         )
 
-        super(Settings, self).__init__([ft.Row([self.card])], expand=True, scroll=ft.ScrollMode.ALWAYS)
+        super(Settings, self).__init__([self.card], expand=True, scroll=ft.ScrollMode.ALWAYS)
 
 
 class SettingsPanel(ft.Stack):
