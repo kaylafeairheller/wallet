@@ -24,7 +24,7 @@ class OOBIResolverService:
         super().__init__()
 
     @log_errors
-    async def resolve_oobi(self, pre: str = None, oobi: str = None, force=False, alias=None):
+    async def resolve_oobi(self, pre: str | None = None, oobi: str | None = None, force=False, alias=None):
         """
         Resolves an OOBI with the connected Agent's Habery and recreates the full contact data in Organizer.
         This includes a workaround because resolving an OOBI resets all attributes for a contact including the alias.

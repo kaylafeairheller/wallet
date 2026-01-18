@@ -1,10 +1,8 @@
-import json
 import logging
 from datetime import datetime
 
 import flet as ft
 
-from wallet.logs import log_errors
 from wallet.notifying.credential_issuance_request import NoticeCredentialIssuance
 from wallet.notifying.group_inception_request import NoticeMultisigGroupInception
 from wallet.notifying.group_rotation_request import NoticeMultisigGroupRotation

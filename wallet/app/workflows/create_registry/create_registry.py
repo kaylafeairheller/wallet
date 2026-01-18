@@ -4,14 +4,13 @@ import flet as ft
 from flet import FontWeight, Padding
 from keri.app import connecting, grouping
 from keri.app.habbing import GroupHab
-from keri.core import coring, serdering, signing
+from keri.core import serdering, signing
 from keri.core.eventing import SealEvent
 
 from wallet.app.identifying.identifier import IdentifierBase
 from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
-import pprint
 
 
 class CreateRegistryPanel(IdentifierBase):
@@ -72,7 +71,7 @@ class CreateRegistryPanel(IdentifierBase):
 
     @log_errors
     async def create(self, _):
-        await self.app.snack(f'Creating registry...')
+        await self.app.snack('Creating registry...')
 
         hab = self.app.agent.hby.habByName(self.alias.value)
         if hab is None:
@@ -95,7 +94,7 @@ class CreateRegistryPanel(IdentifierBase):
         if isinstance(hab, GroupHab):
             usage = self.usage.value
             if usage is None:
-                usage = input(f'Please enter a description of the credential registry: ')
+                usage = input('Please enter a description of the credential registry: ')
 
             smids = hab.db.signingMembers(pre=hab.pre)
             smids.remove(hab.mhab.pre)

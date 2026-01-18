@@ -125,7 +125,7 @@ class IssuerBase(ft.Column):
                 )
                 for cred in credentials
             ]
-        except Exception as e:
+        except Exception:
             logger.exception(f'Error loading credentials by schema {schema_said}')
             return []
 
@@ -136,8 +136,8 @@ class IssuerBase(ft.Column):
         recipient: str,
         schema: str,
         data: dict,
-        source: dict = None,
-        rules: dict = None,
+        source: dict | None = None,
+        rules: dict | None = None,
         private: bool = False,
     ) -> tuple:
         """

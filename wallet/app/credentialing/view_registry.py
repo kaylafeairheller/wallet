@@ -9,7 +9,6 @@ import pyperclip
 from flet import Padding
 
 from wallet.app.credentialing.registry import RegistryBase
-from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
 

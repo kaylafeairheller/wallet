@@ -143,7 +143,7 @@ class AbandonIdentifierDialog(ft.AlertDialog):
             # Navigate to identifier list
             await self.app.page.push_route('/identifiers')
 
-        except Exception as ex:
+        except Exception:
             logger.exception('Error abandoning singlesig identifier')
             raise
 
@@ -181,6 +181,6 @@ class AbandonIdentifierDialog(ft.AlertDialog):
             # Navigate to identifier list
             await self.app.page.push_route('/identifiers')
 
-        except Exception as ex:
+        except Exception:
             logger.exception('Error initiating group identifier abandonment')
             raise

@@ -19,7 +19,6 @@ from wallet.app.witnessing.witnesses import Witnesses
 from wallet.app.workflows.create_multisig.challenge_response import MultisigChallengeResponsePanel
 from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
 from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMultisigIdentifierPanel
-from wallet.app.workflows.create_multisig.create_identifier import CreateMultiSigPanel
 from wallet.app.workflows.create_registry.create_registry import CreateRegistryPanel
 from wallet.app.workflows.create_singlesig.create_identifier import CreateSingleSigIdentifierPanel
 from wallet.app.workflows.issuing.issue_ecr_auth import CreateIssueECRAuthPanel

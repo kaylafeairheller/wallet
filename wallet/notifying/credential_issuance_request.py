@@ -5,7 +5,6 @@ import flet as ft
 from keri.app import grouping, habbing
 from keri.core import coring, eventing, serdering, signing
 
-from wallet.app.colouring import Colouring
 from wallet.logs import log_errors
 from wallet.notifying.notification import NotificationsBase
 

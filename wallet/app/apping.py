@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
 import pprint
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import flet as ft
 from hio.help import decking
@@ -18,15 +21,21 @@ from wallet.core.agenting import close_agent_task
 from wallet.core.configing import WalletConfig
 from wallet.logs import log_errors
 
+if TYPE_CHECKING:
+    from wallet.core.agenting import Agent
+
 logger = logging.getLogger('wallet')
 
 
 class WalletApp(ft.Stack):
+    layout: Layout | None
+    _agent: Agent | None
+
     def __init__(self, page: ft.Page, config: WalletConfig):
         super().__init__()
         # Flet config props
         self.environment = config.environment
-        self.layout = None
+        self.layout: Layout | None = None
         self._page = page  # Store page reference (page property is read-only in Flet controls)
         self.name = config.app_name
         self.page.title = (
@@ -46,7 +55,7 @@ class WalletApp(ft.Stack):
         self.current_left = 0
 
         # KERI props
-        self.agent = None  # Will be set by the AgentDrawer
+        self._agent: Agent | None = None  # Will be set by the AgentDrawer
         self.agent_task = None  # Will be set by the AgentDrawer
         self.agent_shutdown_event = asyncio.Event()  # Will be set by the AgentDrawer
 

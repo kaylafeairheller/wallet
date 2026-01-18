@@ -77,6 +77,7 @@ class ViewWitness(WitnessBase):
         using_habs = sorted(using_habs, key=lambda h: h.name.lower())
 
         # Build the "Witness for" section as collapsible
+        witness_for_section: ft.Control
         if using_habs:
             witness_for_section = ft.ExpansionTile(
                 title=ft.Text('Witness for', weight=ft.FontWeight.BOLD, size=14),

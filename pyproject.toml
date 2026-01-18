@@ -35,6 +35,7 @@ prerelease = "allow"
 dev-dependencies = [
     "ruff>=0.6.9",
     "mypy>=1.11.0",
+    "no-implicit-optional>=1.4",
 ]
 
 [tool.mypy]

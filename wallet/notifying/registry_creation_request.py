@@ -3,7 +3,7 @@ import logging
 
 import flet as ft
 from keri import kering
-from keri.core import eventing, serdering
+from keri.core import serdering
 
 from wallet.app.colouring import Colouring
 from wallet.logs import log_errors

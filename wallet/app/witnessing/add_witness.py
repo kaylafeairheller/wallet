@@ -3,7 +3,6 @@ Witnesses module for the Wallet application.
 """
 
 import logging
-from sys import prefix
 
 import flet as ft
 from keri.app import connecting

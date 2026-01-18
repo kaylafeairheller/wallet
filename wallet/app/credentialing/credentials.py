@@ -11,7 +11,6 @@ from keri.help import helping
 
 from wallet.app import colouring
 from wallet.app.credentialing.credential import CredentialBase
-from wallet.app.identifying.identifiers import Identifiers
 from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')

@@ -12,7 +12,7 @@ logger = logging.getLogger('wallet')
 
 
 class AgentDrawer(ft.NavigationDrawer):
-    def __init__(self, app, page: ft.Page, open=False, config: WalletConfig = None):
+    def __init__(self, app, page: ft.Page, open=False, config: WalletConfig | None = None):
         super(AgentDrawer, self).__init__()
         self.config = config
         self._page = page  # Store page reference (page property is read-only in Flet controls)

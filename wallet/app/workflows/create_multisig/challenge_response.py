@@ -42,7 +42,7 @@ class MultisigChallengeResponsePanel(IdentifierBase):
         super().__init__(app=app, panel=self.panel())
 
     async def accept(self, _):
-        await self.app.snack(f'Accepting Challenge Response...')
+        await self.app.snack('Accepting Challenge Response...')
         await self.app.page.push_route(
             f'/workflows/multisig/identifiers/{self.hab.pre}/contacts/{self.contact_alias}/{self.contact_aid}/multisig/create'
         )

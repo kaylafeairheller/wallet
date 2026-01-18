@@ -1,10 +1,9 @@
-import json
 import logging
 
 import flet as ft
 from flet import FontWeight
 from keri.app import connecting, grouping
-from keri.core import coring, signing
+from keri.core import coring
 from ordered_set import OrderedSet as oset
 
 from wallet.app.identifying.identifier import IdentifierBase
@@ -200,7 +199,7 @@ class CreateMultisigIdentifierPanel(IdentifierBase):
         # await self.app.snack(f'Created AID {hab.pre}.')
 
         # self.app.agent.witners.push(dict(serder=serder))
-        await self.app.snack(f'Creating Group Multisig...')
+        await self.app.snack('Creating Group Multisig...')
         await self.app.page.push_route('/home')
 
     async def cancel(self, _):

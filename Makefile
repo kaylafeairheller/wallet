@@ -23,6 +23,12 @@ fmt:
 	@uv tool run ruff check --select I --fix
 	@uv tool run ruff format
 
+lint:
+	@uv run ruff check wallet/
+
+typecheck:
+	@uv run mypy wallet/
+
 # used by ci
 check:
 	uv tool run ruff check --select I

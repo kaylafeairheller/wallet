@@ -7,8 +7,7 @@ import logging
 import flet as ft
 from keri import kering
 from keri.app import configing, directing, habbing
-from keri.core import coring, signing
-from keri.vdr import credentialing
+from keri.core import signing
 
 from wallet import walleting
 from wallet.app.colouring import Colouring
@@ -31,7 +30,7 @@ class AgentInitialization(ft.AlertDialog):
         config (WalletConfig, optional): The Wallet configuration. Defaults to None.
     """
 
-    def __init__(self, app, page: ft.Page, config: WalletConfig = None):
+    def __init__(self, app, page: ft.Page, config: WalletConfig | None = None):
         super(AgentInitialization, self).__init__()
         # Environment-specific setup
         match config.environment:
