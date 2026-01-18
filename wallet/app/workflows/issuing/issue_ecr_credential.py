@@ -1,10 +1,11 @@
 import logging
 
 import flet as ft
-from flet_core import FontWeight, padding
-from keri.app import connecting
+from flet import FontWeight, Padding
+from keri.app import connecting, habbing
 
-from wallet.app.workflows.issuing.issuer import IssuerBase
+from wallet.app.workflows.issuing.issuer import SCHEMA_ECR, SCHEMA_ECR_AUTH, IssuerBase
+from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
 
@@ -23,23 +24,23 @@ class CreateIssueECRCredentialPanel(IssuerBase):
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
         self.registryDropdown = ft.Dropdown(
-            options=IssuerBase.loadRegistries(),
+            options=IssuerBase.loadRegistries(self.app.agent),
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
-        self.leCredentialsDropdown = ft.Dropdown(
-            options=IssuerBase.loadLECredentials(),
+        self.ecrAuthCredentialsDropdown = ft.Dropdown(
+            options=IssuerBase.loadCredentialsBySchema(self.app.agent, SCHEMA_ECR_AUTH),
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.on_auth_credential_selected,
         )
 
         self.contactsDropdown = ft.Dropdown(
@@ -47,7 +48,7 @@ class CreateIssueECRCredentialPanel(IssuerBase):
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
         self.personLegalNameTextField = ft.TextField(
@@ -76,8 +77,41 @@ class CreateIssueECRCredentialPanel(IssuerBase):
 
     def save_selection(self, e: ft.ControlEvent):
         selected_value = e.control.value
-        print(f"User selected: {selected_value}")
-    
+        logger.debug(f'User selected: {selected_value}')
+
+    def on_auth_credential_selected(self, e: ft.ControlEvent):
+        """Handle ECR Auth credential selection to auto-populate fields."""
+        selected_said = e.control.value
+        logger.debug(f'ECR Auth credential selected: {selected_said}')
+
+        # Find the credential data and extract fields
+        for option in self.ecrAuthCredentialsDropdown.options:
+            if option.key == selected_said and option.data:
+                attrib = option.data.attrib
+                self.personLegalNameTextField.value = attrib.get('personLegalName', '')
+                self.engagementContextRoleTextField.value = attrib.get('engagementContextRole', '')
+                self.leiTextField.value = attrib.get('LEI', '')
+                self.personLegalNameTextField.update()
+                self.engagementContextRoleTextField.update()
+                self.leiTextField.update()
+                break
+
+    def validate_form(self) -> tuple:
+        """Validate all required fields are filled.
+
+        Returns:
+            tuple: (is_valid: bool, error_message: str or None)
+        """
+        if not self.issuerDropdown.value:
+            return (False, 'Please select an issuer')
+        if not self.registryDropdown.value:
+            return (False, 'Please select a registry')
+        if not self.ecrAuthCredentialsDropdown.value:
+            return (False, 'Please select an ECR Auth credential for the edge')
+        if not self.contactsDropdown.value:
+            return (False, 'Please select a recipient')
+        return (True, None)
+
     def panel(self):
         return ft.Container(
             content=ft.Column(
@@ -100,7 +134,7 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                                 controls=[
                                     self.issuerDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -117,7 +151,7 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                                 controls=[
                                     self.registryDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -132,9 +166,9 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                             ),
                             ft.Row(
                                 controls=[
-                                    self.leCredentialsDropdown,
+                                    self.ecrAuthCredentialsDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -151,7 +185,7 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                                 controls=[
                                     self.contactsDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -168,7 +202,7 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                                 controls=[
                                     self.personLegalNameTextField,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -185,7 +219,7 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                                 controls=[
                                     self.engagementContextRoleTextField,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -202,16 +236,16 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                                 controls=[
                                     self.leiTextField,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Row(
                         [
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Issue',
                                 on_click=self.issue,
                             ),
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Cancel',
                                 on_click=self.cancel,
                             ),
@@ -220,15 +254,67 @@ class CreateIssueECRCredentialPanel(IssuerBase):
                 ],
             ),
             expand=True,
-            alignment=ft.alignment.top_left,
-            padding=padding.only(bottom=105),
+            alignment=ft.Alignment.TOP_LEFT,
+            padding=Padding.only(bottom=105),
         )
-    
+
+    @log_errors
     async def issue(self, _):
-        await self.app.snack(f'Issuing ECR Credential...')
-        self.app.page.route = f'/home'
-        await self.page.update_async()
+        # Validate form fields
+        is_valid, error_msg = self.validate_form()
+        if not is_valid:
+            await self.app.snack(error_msg)
+            return
+
+        await self.app.snack('Issuing ECR Credential...')
+
+        # Build credential data from auto-populated fields
+        data = {
+            'LEI': self.leiTextField.value,
+            'personLegalName': self.personLegalNameTextField.value,
+            'engagementContextRole': self.engagementContextRoleTextField.value,
+        }
+
+        # Build source edge referencing the ECR Auth credential
+        source = {
+            'auth': {
+                'n': self.ecrAuthCredentialsDropdown.value,
+                's': SCHEMA_ECR_AUTH,
+            }
+        }
+
+        # Issue the credential
+        creder, success, error = await IssuerBase.issue_credential(
+            app=self.app,
+            registry_key=self.registryDropdown.value,
+            recipient=self.contactsDropdown.value,
+            schema=SCHEMA_ECR,
+            data=data,
+            source=source,
+        )
+
+        if not success:
+            await self.app.snack(f'Error issuing credential: {error}')
+            return
+
+        # Check if this is a multisig - need to wait for other participants
+        registry = None
+        for reg in self.app.agent.rgy.regs.values():
+            if reg.regk == self.registryDropdown.value:
+                registry = reg
+                break
+
+        if registry and isinstance(registry.hab, habbing.GroupHab):
+            await self.app.snack('Credential issuance initiated. Waiting for other participants to approve...')
+
+        # Wait for credential completion
+        completed = await IssuerBase.wait_for_completion(self.app, creder.said)
+
+        if completed:
+            await self.app.snack('ECR Credential issued successfully!')
+            await self.app.page.push_route('/credentials')
+        else:
+            await self.app.snack('Credential issuance timed out. Check notifications for status.')
 
     async def cancel(self, _):
-        self.app.page.route = '/home'
-        await self.page.update_async()
+        await self.app.page.push_route('/home')

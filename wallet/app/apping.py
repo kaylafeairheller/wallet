@@ -27,7 +27,7 @@ class WalletApp(ft.Stack):
         # Flet config props
         self.environment = config.environment
         self.layout = None
-        self.page = page
+        self._page = page  # Store page reference (page property is read-only in Flet controls)
         self.name = config.app_name
         self.page.title = (
             self.name if config.environment.value == 'production' else f'{self.name} [{config.environment.value}]'
@@ -66,23 +66,23 @@ class WalletApp(ft.Stack):
 
         self.agentDrawer = drawing.AgentDrawer(app=self, page=page, open=True, config=config)
         self.agentDrawerButton = ft.IconButton(
-            ft.icons.WALLET_ROUNDED,
+            ft.Icons.WALLET_ROUNDED,
             tooltip='Wallets',
             on_click=self.toggle_drawer,
         )
         self.notificationsButton = ft.IconButton(
-            ft.icons.NOTIFICATIONS_NONE_ROUNDED,
+            ft.Icons.NOTIFICATIONS_NONE_ROUNDED,
             on_click=self.show_notifications,
         )
-        self.lockButton = ft.IconButton(ft.icons.LOCK, on_click=self.lock)
+        self.lockButton = ft.IconButton(ft.Icons.LOCK, on_click=self.lock)
 
         self.actions = [self.agentDrawerButton]
         self.page.appbar = ft.AppBar(
             leading=ft.Container(
                 Assets().logo_icon,
                 border_radius=ft.border_radius.all(5),
-                padding=ft.padding.all(2),
-                margin=ft.margin.all(10),
+                padding=ft.Padding.all(2),
+                margin=ft.Margin.all(10),
             ),
             title=ft.Text(self.name, weight=ft.FontWeight.BOLD),
             center_title=False,
@@ -117,14 +117,14 @@ class WalletApp(ft.Stack):
     @log_errors
     async def toggle_drawer(self, _):
         self.page.end_drawer = self.agentDrawer
-        await self.page.show_end_drawer_async(self.page.end_drawer)
-        await self.page.end_drawer.update_async()
+        await self.page.show_end_drawer()
+        self.agentDrawer.update()
 
     @log_errors
     async def route_change(self, _):
         tr = ft.TemplateRoute(self.page.route)
         if tr.match('/'):
-            await self.page.go_async('/splash')
+            await self.page.push_route('/splash')
         elif tr.match('/home'):
             await self.layout.set_home()
         elif tr.match('/identifiers'):
@@ -145,6 +145,8 @@ class WalletApp(ft.Stack):
             await self.layout.set_credentials_list()
         elif tr.match('/registries'):
             await self.layout.set_registries_list()
+        elif tr.match('/registries/:regk/view'):
+            await self.layout.set_registry_view(tr.regk)
         elif tr.match('/settings'):
             await self.layout.set_settings_view()
         elif tr.match('/notifications'):
@@ -187,11 +189,11 @@ class WalletApp(ft.Stack):
             logger.info('Route change to /splash')
             await self.layout.set_splash_view()
 
-        await self.page.update_async()
+        self.page.update()
 
     async def show_notifications(self, e=None):
-        self.page.route = '/notifications'
-        await self.page.update_async()
+        await self.page.push_route('/notifications')
+        self.page.update()
 
     async def lock(self, e=None):
         closed = await close_agent_task(self.agent_task, self.agent_shutdown_event)
@@ -204,9 +206,8 @@ class WalletApp(ft.Stack):
             self.notificationsButton.visible = False
             self.lockButton.visible = False
             self.page.hby_name = None
-            self.page.snack_bar = None
-            self.page.route = '/splash'
-            await self.page.update_async()
+            await self.page.push_route('/splash')
+            self.page.update()
 
     async def refreshContacts(self):
         org = connecting.Organizer(hby=self.agent.hby)
@@ -234,13 +235,15 @@ class WalletApp(ft.Stack):
             contacts.append(c)
 
         await self.layout.contacts.set_contacts(contacts)
-        await self.layout.contacts.update_async()
+        self.layout.contacts.update()
 
     def reload(self):
         if self.agent is not None:
             self.layout.navbar.visible = True
             self.notificationsButton.visible = True
             self.lockButton.visible = True
+            self.layout.update()
+            self.page.update()
 
     def reload_witnesses_and_members(self):
         org = connecting.Organizer(hby=self.agent.hby)
@@ -271,6 +274,8 @@ class WalletApp(ft.Stack):
             expand=True,
             vertical_alignment='start',
         )
+        # In Flet 1.0 declarative, set controls directly instead of returning
+        self.controls = [self.layout]
         return self.layout
 
     # on_change
@@ -283,14 +288,21 @@ class WalletApp(ft.Stack):
         self._agent = agent
         if self._agent is not None:
             self.layout.navbar.visible = True
-            self.layout.splash.visible = False
-            self.actions.insert(0, self.notificationsButton)
-            self.actions.insert(len(self.actions), self.lockButton)
+            if self.notificationsButton not in self.actions:
+                self.actions.insert(0, self.notificationsButton)
+            if self.lockButton not in self.actions:
+                self.actions.append(self.lockButton)
 
     async def snack(self, message, duration=5000):
-        self.page.snack_bar = ft.SnackBar(ft.Text(message), duration=duration)
-        self.page.snack_bar.open = True
-        await self.page.update_async()
+        logger.debug(f'Snack called with message: {message}')
+        snack = ft.SnackBar(content=ft.Text(message), duration=duration)
+        self.page.overlay.append(snack)
+        snack.open = True
+        self.page.update()
+
+    @property
+    def page(self):
+        return self._page
 
     @property
     def hby(self):

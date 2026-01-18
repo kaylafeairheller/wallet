@@ -1,10 +1,11 @@
 import logging
 
 import flet as ft
-from flet_core import FontWeight, padding
-from keri.app import connecting
+from flet import FontWeight, Padding
+from keri.app import connecting, habbing
 
-from wallet.app.workflows.issuing.issuer import IssuerBase
+from wallet.app.workflows.issuing.issuer import SCHEMA_LE, SCHEMA_OOR_AUTH, IssuerBase
+from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
 
@@ -23,23 +24,23 @@ class CreateIssueOORAuthPanel(IssuerBase):
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
         self.registryDropdown = ft.Dropdown(
-            options=IssuerBase.loadRegistries(),
+            options=IssuerBase.loadRegistries(self.app.agent),
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
         self.leCredentialsDropdown = ft.Dropdown(
-            options=IssuerBase.loadLECredentials(),
+            options=IssuerBase.loadCredentialsBySchema(self.app.agent, SCHEMA_LE),
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.on_le_credential_selected,
         )
 
         self.contactsDropdown = ft.Dropdown(
@@ -47,15 +48,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
-        )
-
-        self.leCredentialSaidDropdown = ft.Dropdown(
-            options=IssuerBase.loadLECredentials(),
-            width=550,
-            text_size=14,
-            text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
         self.personLegalNameTextField = ft.TextField(
@@ -82,8 +75,41 @@ class CreateIssueOORAuthPanel(IssuerBase):
 
     def save_selection(self, e: ft.ControlEvent):
         selected_value = e.control.value
-        print(f"User selected: {selected_value}")
-    
+        logger.debug(f'User selected: {selected_value}')
+
+    def on_le_credential_selected(self, e: ft.ControlEvent):
+        """Handle LE credential selection to auto-populate LEI."""
+        selected_said = e.control.value
+        logger.debug(f'LE credential selected: {selected_said}')
+
+        # Find the credential data and extract LEI
+        for option in self.leCredentialsDropdown.options:
+            if option.key == selected_said and option.data:
+                lei = option.data.attrib.get('LEI', '')
+                self.leiTextField.value = lei
+                self.leiTextField.update()
+                break
+
+    def validate_form(self) -> tuple:
+        """Validate all required fields are filled.
+
+        Returns:
+            tuple: (is_valid: bool, error_message: str or None)
+        """
+        if not self.issuerDropdown.value:
+            return (False, 'Please select an issuer')
+        if not self.registryDropdown.value:
+            return (False, 'Please select a registry')
+        if not self.leCredentialsDropdown.value:
+            return (False, 'Please select an LE credential for the edge')
+        if not self.contactsDropdown.value:
+            return (False, 'Please select a recipient')
+        if not self.personLegalNameTextField.value:
+            return (False, "Please enter the person's legal name")
+        if not self.officialRoleTextField.value:
+            return (False, 'Please enter the official role')
+        return (True, None)
+
     def panel(self):
         return ft.Container(
             content=ft.Column(
@@ -106,7 +132,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
                                 controls=[
                                     self.issuerDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -123,7 +149,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
                                 controls=[
                                     self.registryDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -140,7 +166,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
                                 controls=[
                                     self.leCredentialsDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -157,24 +183,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
                                 controls=[
                                     self.contactsDropdown,
                                 ],
-                            )
-                        ]
-                    ),
-                    ft.Column(
-                        [
-                            ft.Row(
-                                [
-                                    ft.Text(
-                                        'Select LE Edge',
-                                        weight=FontWeight.BOLD,
-                                    ),
-                                ]
                             ),
-                            ft.Row(
-                                controls=[
-                                    self.leCredentialSaidDropdown,
-                                ],
-                            )
                         ]
                     ),
                     ft.Column(
@@ -182,7 +191,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
                             ft.Row(
                                 [
                                     ft.Text(
-                                        'LEI',
+                                        'LEI (from LE Credential)',
                                         weight=FontWeight.BOLD,
                                     ),
                                 ]
@@ -191,7 +200,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
                                 controls=[
                                     self.leiTextField,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -208,7 +217,7 @@ class CreateIssueOORAuthPanel(IssuerBase):
                                 controls=[
                                     self.personLegalNameTextField,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -225,16 +234,16 @@ class CreateIssueOORAuthPanel(IssuerBase):
                                 controls=[
                                     self.officialRoleTextField,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Row(
                         [
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Issue',
                                 on_click=self.issue,
                             ),
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Cancel',
                                 on_click=self.cancel,
                             ),
@@ -243,15 +252,67 @@ class CreateIssueOORAuthPanel(IssuerBase):
                 ],
             ),
             expand=True,
-            alignment=ft.alignment.top_left,
-            padding=padding.only(bottom=105),
+            alignment=ft.Alignment.TOP_LEFT,
+            padding=Padding.only(bottom=105),
         )
-    
+
+    @log_errors
     async def issue(self, _):
-        await self.app.snack(f'Issuing OOR Authorization...')
-        self.app.page.route = f'/home'
-        await self.page.update_async()
+        # Validate form fields
+        is_valid, error_msg = self.validate_form()
+        if not is_valid:
+            await self.app.snack(error_msg)
+            return
+
+        await self.app.snack('Issuing OOR Authorization...')
+
+        # Build credential data
+        data = {
+            'LEI': self.leiTextField.value,
+            'personLegalName': self.personLegalNameTextField.value,
+            'officialRole': self.officialRoleTextField.value,
+        }
+
+        # Build source edge referencing the LE credential
+        source = {
+            'le': {
+                'n': self.leCredentialsDropdown.value,
+                's': SCHEMA_LE,
+            }
+        }
+
+        # Issue the credential
+        creder, success, error = await IssuerBase.issue_credential(
+            app=self.app,
+            registry_key=self.registryDropdown.value,
+            recipient=self.contactsDropdown.value,
+            schema=SCHEMA_OOR_AUTH,
+            data=data,
+            source=source,
+        )
+
+        if not success:
+            await self.app.snack(f'Error issuing credential: {error}')
+            return
+
+        # Check if this is a multisig - need to wait for other participants
+        registry = None
+        for reg in self.app.agent.rgy.regs.values():
+            if reg.regk == self.registryDropdown.value:
+                registry = reg
+                break
+
+        if registry and isinstance(registry.hab, habbing.GroupHab):
+            await self.app.snack('Credential issuance initiated. Waiting for other participants to approve...')
+
+        # Wait for credential completion
+        completed = await IssuerBase.wait_for_completion(self.app, creder.said)
+
+        if completed:
+            await self.app.snack('OOR Authorization issued successfully!')
+            await self.app.page.push_route('/credentials')
+        else:
+            await self.app.snack('Credential issuance timed out. Check notifications for status.')
 
     async def cancel(self, _):
-        self.app.page.route = '/home'
-        await self.page.update_async()
+        await self.app.page.push_route('/home')

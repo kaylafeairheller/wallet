@@ -24,7 +24,7 @@ class NotificationsBase(ft.Column):
     def __init__(self, app, panel, title=None):
         self.app = app
         self.panel = panel
-        self.card = ft.Container(content=self.panel, expand=True, alignment=ft.alignment.top_left)
+        self.card = ft.Container(content=self.panel, expand=True, alignment=ft.Alignment.TOP_LEFT)
         self.title = title if title else ft.Row()
         super().__init__(
             [

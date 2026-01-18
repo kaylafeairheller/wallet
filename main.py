@@ -1,3 +1,4 @@
+import argparse
 import ctypes
 import logging.config
 import os
@@ -7,7 +8,7 @@ from pathlib import Path
 
 import flet as ft
 import uvloop
-from flet_core import Page
+from flet import Page
 
 from wallet.app import colouring
 from wallet.core import configing
@@ -16,6 +17,19 @@ from wallet.storing import THEME_KEY
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('wallet')
+
+
+def setup_debug_logging():
+    """Enable debug level logging for the wallet logger."""
+    wallet_logger = logging.getLogger('wallet')
+    wallet_logger.setLevel(logging.DEBUG)
+    for handler in wallet_logger.handlers:
+        handler.setLevel(logging.DEBUG)
+    # Also set root logger handlers
+    for handler in logging.root.handlers:
+        handler.setLevel(logging.DEBUG)
+    logger.debug('Debug logging enabled')
+
 
 ################################# Custom Libsodium Loader ############################################
 # This code has to be in the main module to avoid a partially initialized module error
@@ -128,10 +142,15 @@ def wrap_with_config(config: WalletConfig):
         """
         Main function for Wallet that has a reference to the config.
         """
-        stored_theme = await page.client_storage.get_async(THEME_KEY)
+        stored_theme = await page.shared_preferences.get(THEME_KEY)
+        # Strip quotes if present (shared_preferences returns JSON-encoded strings)
+        if stored_theme and stored_theme.startswith('"') and stored_theme.endswith('"'):
+            stored_theme = stored_theme[1:-1]
         current_theme = stored_theme if stored_theme else page.platform_brightness.name
-        await page.client_storage.set_async(THEME_KEY, current_theme)
-        page.theme_mode = current_theme
+        await page.shared_preferences.set(THEME_KEY, current_theme)
+        # Convert string theme to ft.ThemeMode enum
+        theme_mode_map = {'LIGHT': ft.ThemeMode.LIGHT, 'DARK': ft.ThemeMode.DARK, 'SYSTEM': ft.ThemeMode.SYSTEM}
+        page.theme_mode = theme_mode_map.get(current_theme, ft.ThemeMode.SYSTEM)
         logger.info(f'Theme mode set to {current_theme}')
         clring = colouring.Colouring.set_theme(current_theme if current_theme != 'SYSTEM' else page.platform_brightness.name)
 
@@ -150,22 +169,29 @@ def wrap_with_config(config: WalletConfig):
 
         logger.info('Wallet is running.')
         await app.toggle_drawer(None)
-        await app.page.update_async()
+        app.page.update()
 
     return wallet_main
 
 
-async def launcher(config: WalletConfig):
-    """Launches Wallet as a Flet async app."""
-    await ft.app_async(target=wrap_with_config(config), assets_dir=config.assets_dir)
+def launcher(config: WalletConfig):
+    """Launches Wallet as a Flet app."""
+    ft.run(wrap_with_config(config), assets_dir=config.assets_dir)
 
 
 def run_wallet():
-    """Entry point for app-level configuration and asyncio event loop."""
-    uvloop.run(launcher(configing.read_config()))
+    """Entry point for app-level configuration."""
+    launcher(configing.read_config())
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='KERI Wallet Application')
+    parser.add_argument('--debug', action='store_true', help='Enable debug logging')
+    args = parser.parse_args()
+
+    if args.debug:
+        setup_debug_logging()
+
     # get the directory of the main.py file so we can load the custom libsodium from ./libsodium
     appdir = os.path.dirname(os.path.abspath(__file__))
     load_custom_libsodium(appdir)

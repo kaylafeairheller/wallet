@@ -38,7 +38,7 @@ class OobiResolver(Component):
         super().__init__()
         self.app = app
         self.org = app.agent.org
-        
+
         self.callback = callback
         self.err_cb = err_cb
 
@@ -51,7 +51,7 @@ class OobiResolver(Component):
         async def txt_alias_focus(e):
             del e
             self.txt_alias.border_color = None
-            await self.app.page.update_async()
+            self.app.page.update()
 
         self.txt_alias = ft.TextField(label='Alias', width=400, on_change=txt_alias_change, on_focus=txt_alias_focus)
 
@@ -61,7 +61,7 @@ class OobiResolver(Component):
         async def txt_oobi_focus(e):
             del e
             self.txt_oobi.border_color = None
-            await self.app.page.update_async()
+            self.app.page.update()
 
         self.txt_oobi = ft.TextField(label='OOBI', width=400, on_change=txt_oobi_change, on_focus=txt_oobi_focus)
 
@@ -101,8 +101,8 @@ class OobiResolver(Component):
                 ),
                 ft.Row(
                     [
-                        ft.ElevatedButton('Connect', on_click=self.validate),
-                        ft.ElevatedButton(
+                        ft.Button('Connect', on_click=self.validate),
+                        ft.Button(
                             'Cancel',
                             on_click=self.on_cancel,
                         ),
@@ -145,8 +145,8 @@ class OobiResolver(Component):
     async def on_cancel(self, e):
         del e
         self.reset()
-        self.app.page.route = '/contacts'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/contacts')
+        self.app.page.update()
 
     def reset(self):
         self.txt_alias.value = ''

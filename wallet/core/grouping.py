@@ -114,8 +114,7 @@ class GroupRequester(doing.Doer):
 
         if self.counselor.complete(prefixer=prefixer, seqner=seqner, saider=saider):
             await self.app.snack(f'Multisig AID complete for {serder.pre}.')
-            self.app.page.route = f'/identifiers/{serder.pre}/view'
-            await self.app.page.update_async()
+            await self.app.page.push_route(f'/identifiers/{serder.pre}/view')
             self.app.agent.notifier.rem(self.app.agent.joining[serder.pre])
             self.app.agent.noter.update()
         else:
@@ -128,12 +127,16 @@ class GroupRequester(doing.Doer):
 
         if self.counselor.complete(prefixer=prefixer, seqner=seqner, saider=saider):
             await self.app.snack(f'Multisig AID rotation complete for {serder.pre}.')
-            if self.app.controls[0] and hasattr(self.app.controls[0].active_view, 'rotate_progress_ring'):
+            if (
+                self.app.controls
+                and self.app.controls[0]
+                and hasattr(self.app.controls[0], 'active_view')
+                and hasattr(self.app.controls[0].active_view, 'rotate_progress_ring')
+            ):
                 # TODO have a better signaling mechanism to hide the progress ring
                 #   This really breaks encapsulation
                 await self.app.controls[0].active_view.hide_progress_ring()
-            self.app.page.route = f'/identifiers/{serder.pre}/view'
-            await self.app.page.update_async()
+            await self.app.page.push_route(f'/identifiers/{serder.pre}/view')
             try:  # clear out notification if joining - only applies to joiners, not leaders
                 note = self.app.agent.joining[serder.pre]
                 self.app.agent.notifier.rem(note)

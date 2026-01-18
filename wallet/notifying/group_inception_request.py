@@ -2,12 +2,13 @@ import asyncio
 import logging
 
 import flet as ft
-from keri.core import eventing, serdering
 from keri import kering
+from keri.core import eventing, serdering
 
 from wallet.app.colouring import Colouring
-from wallet.notifying.notification import NotificationsBase
 from wallet.logs import log_errors
+from wallet.notifying.notification import NotificationsBase
+
 logger = logging.getLogger('wallet')
 
 
@@ -44,7 +45,7 @@ class NoticeMultisigGroupInception(NotificationsBase):
         self.signing_members = []
         self.rotation_members = []
 
-        self.btn_join = ft.ElevatedButton(
+        self.btn_join = ft.Button(
             'Join',
             on_click=self.join,
             data=note.rid,
@@ -99,13 +100,13 @@ class NoticeMultisigGroupInception(NotificationsBase):
                 controls=[
                     ft.Container(
                         ft.Text(value='Group Inception Request', size=24),
-                        padding=ft.padding.only(10, 0, 10, 0),
+                        padding=ft.Padding.only(left=10, top=0, right=10, bottom=0),
                     ),
                     ft.Container(
-                        ft.IconButton(icon=ft.icons.CLOSE, on_click=self.cancel),
-                        alignment=ft.alignment.top_right,
+                        ft.IconButton(icon=ft.Icons.CLOSE, on_click=self.cancel),
+                        alignment=ft.Alignment.TOP_RIGHT,
                         expand=True,
-                        padding=ft.padding.only(0, 0, 10, 0),
+                        padding=ft.Padding.only(left=0, top=0, right=10, bottom=0),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -114,8 +115,8 @@ class NoticeMultisigGroupInception(NotificationsBase):
         )
 
     async def cancel(self, e):
-        self.app.page.route = '/notifications'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/notifications')
+        self.app.page.update()
 
     def did_mount(self):
         self.page.run_task(self.get_exchange_message)
@@ -177,14 +178,14 @@ class NoticeMultisigGroupInception(NotificationsBase):
                 )
             )
         gid = self.ked['a']['gid']
-        print(self.ked)
+        logger.debug(f'Group inception ked: {self.ked}')
         self.group_id.value = gid
         # self.group_alias.value = self.app.hby.habs[gid].name
         self.group_info_pacifier.visible = False
         self.group_info.visible = True
         self.btn_join.disabled = False
 
-        await self.update_async()
+        self.update()
 
         return None
 
@@ -203,15 +204,15 @@ class NoticeMultisigGroupInception(NotificationsBase):
                     ft.Row(
                         [
                             self.btn_join,
-                            ft.ElevatedButton('Dismiss', on_click=self.dismiss),
+                            ft.Button('Dismiss', on_click=self.dismiss),
                         ]
                     ),
-                    ft.Container(padding=ft.padding.only(bottom=80)),
+                    ft.Container(padding=ft.Padding.only(bottom=80)),
                 ],
                 scroll=ft.ScrollMode.AUTO,
             ),
             expand=True,
-            padding=ft.padding.only(left=10, top=15, bottom=100),
+            padding=ft.Padding.only(left=10, top=15, bottom=100),
         )
 
     @log_errors
@@ -238,7 +239,7 @@ class NoticeMultisigGroupInception(NotificationsBase):
         if self.group_alias.value == '':
             self.group_alias.border_color = Colouring.get(Colouring.RED)
             await self.app.snack('Enter an alias for the group')
-            await self.update_async()
+            self.update()
             return
 
         inits = {}
@@ -255,13 +256,17 @@ class NoticeMultisigGroupInception(NotificationsBase):
         inits['wits'] = oicp.ked['b']
         inits['delpre'] = oicp.ked['di'] if 'di' in self.ked else None
 
-        ghab = self.app.hby.makeGroupHab(
-            group=self.group_alias.value,
-            mhab=self.mhab,
-            smids=self.signing_members,
-            rmids=self.rotation_members,
-            **inits,
-        )
+        try:
+            ghab = self.app.hby.makeGroupHab(
+                group=self.group_alias.value,
+                mhab=self.mhab,
+                smids=self.signing_members,
+                rmids=self.rotation_members,
+                **inits,
+            )
+        except Exception as ex:
+            await self.app.snack(f'Error joining group: {ex}')
+            return
 
         self.app.agent.groups.append(dict(serder=oicp))
         self.app.agent.joining[ghab.pre] = rid
@@ -276,5 +281,5 @@ class NoticeMultisigGroupInception(NotificationsBase):
         Returns:
             None
         """
-        self.app.page.route = '/notifications'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/notifications')
+        self.app.page.update()

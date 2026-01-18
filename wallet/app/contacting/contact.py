@@ -25,7 +25,7 @@ class ContactBase(ft.Column):
         self.app = app
         title = title if title else ft.Row()
         self.panel = panel
-        self.card = ft.Container(content=self.panel, expand=True, alignment=ft.alignment.top_left)
+        self.card = ft.Container(content=self.panel, expand=True, alignment=ft.Alignment.TOP_LEFT)
 
         super().__init__(
             [

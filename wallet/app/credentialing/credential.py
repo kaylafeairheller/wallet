@@ -31,7 +31,7 @@ class CredentialBase(ft.Column):
         self.card = ft.Container(
             content=self.panel,
             expand=True,
-            alignment=ft.alignment.top_left,
+            alignment=ft.Alignment.TOP_LEFT,
         )
 
         super().__init__(

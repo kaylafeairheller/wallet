@@ -1,14 +1,15 @@
+import json
 import logging
 from datetime import datetime
-import json
 
 import flet as ft
 
+from wallet.logs import log_errors
+from wallet.notifying.credential_issuance_request import NoticeCredentialIssuance
 from wallet.notifying.group_inception_request import NoticeMultisigGroupInception
 from wallet.notifying.group_rotation_request import NoticeMultisigGroupRotation
-from wallet.notifying.registry_creation_request import NoticeRegistryCreation
 from wallet.notifying.notification import NotificationsBase
-from wallet.logs import log_errors
+from wallet.notifying.registry_creation_request import NoticeRegistryCreation
 
 logger = logging.getLogger('wallet')
 
@@ -54,10 +55,8 @@ class Notifications(NotificationsBase):
         self.app.agent.notifier.mar(note.rid)
         self.app.agent.noter.update()
 
-        print("ROUTE", note.rid)
-
-        self.app.page.route = f'/notifications/{note.rid}'
-        await self.app.page.update_async()
+        logger.debug(f'Routing to note: {note.rid}')
+        await self.app.page.push_route(f'/notifications/{note.rid}')
 
     async def delete_note(self, e):
         """
@@ -71,7 +70,7 @@ class Notifications(NotificationsBase):
         """
         self.app.agent.notifier.rem(rid=e.control.data.rid)
         self.build()
-        await self.app.page.update_async()
+        self.app.page.update()
 
     async def dismiss(self, _):
         """
@@ -83,8 +82,8 @@ class Notifications(NotificationsBase):
         Returns:
             None
         """
-        self.app.page.route = '/notifications'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/notifications')
+        self.app.page.update()
 
     def build(self):
         """
@@ -100,8 +99,7 @@ class Notifications(NotificationsBase):
         """
         self.list.controls.clear()
         self.notes = self.app.agent.notifier.getNotes(start=0, end=self.app.agent.notifier.getNoteCnt())
-
-        print("NOTES ARE HERE", self.notes)
+        logger.debug(f'Retrieved {len(self.notes)} notifications')
 
         if len(self.notes) == 0:
             return ft.Column(
@@ -114,35 +112,33 @@ class Notifications(NotificationsBase):
         self.notes.sort(key=lambda note: datetime.fromisoformat(note.datetime), reverse=True)
 
         for note in self.notes:
-            print("ONE NOTE", note.pad)
+            logger.debug(f'Processing note: {note.pad}')
             attrs = note.attrs
             route = attrs['r']
             dt = datetime.fromisoformat(note.datetime)
             dt_fmt = dt.strftime('%Y-%m-%d %I:%M %p')
 
-            print("ATTRS", attrs)
-            print("ROUTE", route)
+            logger.debug(f'Note attrs: {attrs}, route: {route}')
             title = 'New Notification'
             match route:
                 case '/multisig/icp':
-                    print("THIS CASE")
                     title = 'Group Inception Request'
                     # tile = ft.ListTile(
-                    #     leading=ft.Icon(ft.icons.PEOPLE_ROUNDED),
+                    #     leading=ft.Icon(ft.Icons.PEOPLE_ROUNDED),
                     #     title=ft.Text('Group Inception Request'),
                     #     subtitle=ft.Text(f'{dt_fmt}'),
                     #     trailing=ft.PopupMenuButton(
                     #         tooltip=None,
-                    #         icon=ft.icons.MORE_VERT,
+                    #         icon=ft.Icons.MORE_VERT,
                     #         items=[
                     #             ft.PopupMenuItem(
                     #                 text='View',
-                    #                 icon=ft.icons.PAGEVIEW,
+                    #                 icon=ft.Icons.PAGEVIEW,
                     #                 data=note,
                     #                 on_click=self.route_note,
                     #             ),
                     #             ft.PopupMenuItem(
-                    #                 text='Delete', icon=ft.icons.DELETE_FOREVER, on_click=self.delete_note, data=note
+                    #                 text='Delete', icon=ft.Icons.DELETE_FOREVER, on_click=self.delete_note, data=note
                     #             ),
                     #         ],
                     #     ),
@@ -154,25 +150,24 @@ class Notifications(NotificationsBase):
                 case '/multisig/rot':
                     title = 'Group Rotation Request'
                 case '/multisig/vcp':
-                    print("THAT CASE!")
                     title = 'Registry Creation Request'
+                case '/multisig/iss':
+                    title = 'Credential Issuance Request'
             tile = ft.ListTile(
-                leading=ft.Icon(ft.icons.PEOPLE_ROUNDED),
+                leading=ft.Icon(ft.Icons.PEOPLE_ROUNDED),
                 title=ft.Text(title),
                 subtitle=ft.Text(f'{dt_fmt}'),
                 trailing=ft.PopupMenuButton(
                     tooltip=None,
-                    icon=ft.icons.MORE_VERT,
+                    icon=ft.Icons.MORE_VERT,
                     items=[
                         ft.PopupMenuItem(
                             text='View',
-                            icon=ft.icons.PAGEVIEW,
+                            icon=ft.Icons.PAGEVIEW,
                             data=note,
                             on_click=self.route_note,
                         ),
-                        ft.PopupMenuItem(
-                            text='Delete', icon=ft.icons.DELETE_FOREVER, on_click=self.delete_note, data=note
-                        ),
+                        ft.PopupMenuItem(text='Delete', icon=ft.Icons.DELETE_FOREVER, on_click=self.delete_note, data=note),
                     ],
                 ),
                 data=note,
@@ -214,3 +209,5 @@ class Notifications(NotificationsBase):
                 return NoticeMultisigGroupRotation(self.app, note)
             case '/multisig/vcp':
                 return NoticeRegistryCreation(self.app, note)
+            case '/multisig/iss':
+                return NoticeCredentialIssuance(self.app, note)

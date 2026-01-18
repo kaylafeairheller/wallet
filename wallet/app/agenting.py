@@ -46,7 +46,7 @@ class AgentInitialization(ft.AlertDialog):
                 default_passcode = ''
 
         self.app = app
-        self.page = page
+        self._page = page  # Store page reference (page property is read-only in Flet controls)
         self.config = config
         self.username = ft.TextField(label='Name', value=default_username)
         self.passcode = ft.TextField(
@@ -69,36 +69,32 @@ class AgentInitialization(ft.AlertDialog):
             width=300,
         )
         self.actions = [
-            ft.ElevatedButton(
+            ft.Button(
                 'Create',
                 on_click=self.generate_habery,
             ),
-            ft.ElevatedButton(
+            ft.Button(
                 'Cancel',
                 on_click=self.close_init,
             ),
         ]
         self.actions_alignment = ft.MainAxisAlignment.SPACE_EVENLY
 
-    async def open_init(self, _):
-        """
-        Opens the agent initialization dialog.
-        """
-        self.open = True
-        await self.page.update_async()
+    @property
+    def page(self):
+        return self._page
 
     async def close_init(self, _):
         """
         Closes the agent initialization dialog.
         """
-        self.open = False
-        await self.page.update_async()
+        self.page.pop_dialog()
 
     async def generate_habery(self, e):
         """
         Generates a new Habery instance and updates the agent drawer.
         """
-        self.open = False
+        self.page.pop_dialog()
         cf = configing.Configer(
             name=self.config.config_file,
             base='',
@@ -133,7 +129,7 @@ class AgentInitialization(ft.AlertDialog):
 
         self.app.agentDrawer.update_agents()
 
-        await self.page.update_async()
+        self.page.update()
 
 
 class AgentConnection(ft.AlertDialog):
@@ -158,7 +154,7 @@ class AgentConnection(ft.AlertDialog):
                 default_passcode = ''
 
         self.app = app
-        self.page = page
+        self._page = page  # Store page reference (page property is read-only in Flet controls)
         self.config = config
         self.username = username
         self.passcode = ft.TextField(
@@ -186,16 +182,20 @@ class AgentConnection(ft.AlertDialog):
         )
 
         self.actions = [
-            ft.ElevatedButton(
+            ft.Button(
                 'Open',
                 on_click=self.on_open,
             ),
-            ft.ElevatedButton(
+            ft.Button(
                 'Cancel',
                 on_click=self.close_connect,
             ),
         ]
         self.actions_alignment = ft.MainAxisAlignment.END
+
+    @property
+    def page(self):
+        return self._page
 
     async def confirm_migrate(self, e):
         """
@@ -209,17 +209,19 @@ class AgentConnection(ft.AlertDialog):
         except Exception as ex:
             logger.exception(ex)
             await self.app.snack(f'Database migration failed for {name}. Error: {str(ex)}')
-            await self.page.update_async()
+            self.page.update()
             await self.close_connect(e)
             return
         await self.app.snack(f'Database migration succeeded for: {name}')
         await self.agent_connect(name, base, bran)
         await self.close_connect(e)
+        await self.page.push_route('/home')
+        self.page.update()
         await self.app.snack(f'Connected to {name}')
 
     async def close_connect(self, _):
         """
-        Closes the connection and updates the page asynchronously.
+        Closes the connection dialog.
 
         Parameters:
         - _: Placeholder parameter (ignored)
@@ -227,21 +229,7 @@ class AgentConnection(ft.AlertDialog):
         Returns:
         - None
         """
-        self.open = False
-        await self.page.update_async()
-
-    async def open_connect(self, _):
-        """
-        Opens the connection and updates the page asynchronously.
-
-        Parameters:
-        - _: Placeholder parameter (ignored)
-
-        Returns:
-        - None
-        """
-        self.open = True
-        await self.page.update_async()
+        self.page.pop_dialog()
 
     @log_errors
     async def agent_connect(self, name, base, passcode):
@@ -269,10 +257,7 @@ class AgentConnection(ft.AlertDialog):
         self.app.reload_witnesses_and_members()
         self.app.reload()
         self.page.title = f'{self.app.name} - {name} [{self.app.environment.value}]'
-
-        self.page.route = '/home'
         self.page.hby_name = name
-        await self.page.update_async()
 
     @log_errors
     async def on_open(self, e):
@@ -301,6 +286,8 @@ class AgentConnection(ft.AlertDialog):
             await check_migration(name, base, bran)
             await self.agent_connect(name, base, bran)
             await self.close_connect(e)
+            await self.page.push_route('/home')
+            self.page.update()
             await self.app.snack(f'Connected to {name}')
         except walleting.OldKeystoreError:
             logger.error('Old keystore detected, migration needed')
@@ -309,14 +296,14 @@ class AgentConnection(ft.AlertDialog):
             self.title = ft.Text(f'Migrate {name}')
             self.content = ft.Text('Datastore migration needed.')
             self.actions = [
-                ft.ElevatedButton(
+                ft.Button(
                     'Confirm',
                     on_click=self.confirm_migrate,
                 ),
-                ft.ElevatedButton(
+                ft.Button(
                     'Cancel',
                     on_click=self.close_connect,
                 ),
             ]
-            await self.update_async()
+            self.update()
         logger.info(f'Connected to {name}')

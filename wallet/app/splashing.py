@@ -18,8 +18,8 @@ class Splash(ft.Column):
                             )
                         ],
                     ),
-                    padding=ft.padding.only(0, -100, 0, 0),
-                    alignment=ft.alignment.center,
+                    padding=ft.Padding.only(left=0, top=-100, right=0, bottom=0),
+                    alignment=ft.Alignment.CENTER,
                     expand=True,
                 )
             ],

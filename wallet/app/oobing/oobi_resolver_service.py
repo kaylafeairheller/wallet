@@ -76,8 +76,7 @@ class OOBIResolverService:
                 logger.error(f'OOBI resolve failed: multiple contacts found for alias {alias}')
                 return False
             pre = cts[0]['id']
-            print("PRINTING AID? ", pre)
-            print("PRINTING CONTACT ? ", cts[0])
+            logger.debug(f'OOBI resolved AID: {pre}, contact: {cts[0]}')
         contact['last-refresh'] = helping.nowIso8601()
         self.org.update(pre, contact)
         logger.info(f'OOBI resolved: {alias} {oobi}')

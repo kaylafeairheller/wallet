@@ -12,7 +12,10 @@ keywords = ["GLEIF", "GAR", "cryptography", "KERI", "ACDC"]
 requires-python = ">=3.12.6"
 dependencies = [
     "dataclasses-json==0.6.7",
-    "flet==0.25.2",
+    "flet==0.80.0",
+    "flet-cli==0.80.0",
+    "flet-desktop==0.80.0",
+    "hio==0.6.14",
     "mnemonic==0.21",
     "multicommand==1.0.0",
     "pillow==11.0.0",
@@ -20,6 +23,7 @@ dependencies = [
     "qrcode[pil]==7.4.2",
     "uvloop==0.21.0",
     "keri==1.2.7",
+    "pyperclip>=1.8.0",
 ]
 
 [project.urls]
@@ -29,6 +33,37 @@ repository = "https://github.com/keri-foundation/wallet"
 [tool.uv]
 prerelease = "allow"
 dev-dependencies = [
-    "ruff>=0.6.9"
+    "ruff>=0.6.9",
+    "mypy>=1.11.0",
 ]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+
+# Strict mode for wallet code (can enable gradually)
+[[tool.mypy.overrides]]
+module = "wallet.*"
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+# Ignore third-party libraries without stubs
+[[tool.mypy.overrides]]
+module = [
+    "keri.*",
+    "hio.*",
+    "flet.*",
+    "flet_core.*",
+    "pysodium.*",
+    "mnemonic.*",
+    "pyperclip.*",
+    "qrcode.*",
+    "uvloop.*",
+]
+ignore_missing_imports = true
+ignore_errors = true
 
