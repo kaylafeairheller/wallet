@@ -3,6 +3,7 @@ import random
 from urllib.parse import urljoin, urlparse
 
 import flet as ft
+import pyperclip
 from keri import kering
 
 from wallet.app.colouring import Colouring
@@ -31,16 +32,12 @@ class CreateContactPanel(ContactBase):
             )
 
             async def copy(e):
-                await self.app.page.set_clipboard_async(e.control.data)
+                pyperclip.copy(e.control.data)
+                await self.app.snack('OOBI URL Copied!', duration=2000)
 
-                self.page.snack_bar = ft.SnackBar(ft.Text('OOBI URL Copied!'), duration=2000)
+            self.oobi_copy = ft.IconButton(icon=ft.Icons.COPY_ROUNDED, data=o, on_click=copy)
 
-                self.page.snack_bar.open = True
-                await self.page.update_async()
-
-            self.oobi_copy = ft.IconButton(icon=ft.icons.COPY_ROUNDED, data=o, on_click=copy)
-
-        self.verified = ft.Icon(ft.icons.SHIELD_OUTLINED, size=32, color=Colouring.get(Colouring.RED))
+        self.verified = ft.Icon(ft.Icons.SHIELD_OUTLINED, size=32, color=Colouring.get(Colouring.RED))
         super(CreateContactPanel, self).__init__(app=app, panel=self.panel())
 
     def generate_oobi(self, e):
@@ -69,12 +66,12 @@ class CreateContactPanel(ContactBase):
         await self.app.snack(f'Creating contact {self.alias.value}...')
 
     def load_witnesses(self):
-        return [ft.dropdown.Option(wit['id']) for wit in self.app.witnesses]
+        return [ft.DropdownOption(wit['id']) for wit in self.app.witnesses]
 
     async def callback(self, aid, alias):
         logger.info(f'callback: {aid}, {alias}')
-        self.app.page.route = '/contacts'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/contacts')
+        self.app.page.update()
 
     async def error_callback(self, result):
         pass
@@ -84,6 +81,6 @@ class CreateContactPanel(ContactBase):
         return ft.Container(
             content=ft.Column([ft.Text('Create Contact', size=24), orr.render()]),
             expand=True,
-            alignment=ft.alignment.top_left,
-            padding=ft.padding.only(left=10, top=15),
+            alignment=ft.Alignment.TOP_LEFT,
+            padding=ft.Padding.only(left=10, top=15),
         )

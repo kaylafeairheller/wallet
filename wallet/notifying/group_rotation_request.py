@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List
 
 import flet as ft
-from flet_core import FontWeight
+from flet import FontWeight
 from keri.app import connecting, grouping
 from keri.core import coring, serdering
 from ordered_set import OrderedSet as oset
@@ -68,7 +68,7 @@ class NoticeMultisigGroupRotation(NotificationsBase):
         self.smids = []
         self.rmids = []
 
-        self.btn_join = ft.ElevatedButton(
+        self.btn_join = ft.Button(
             'Join',
             on_click=self.join,
             data=note.rid,
@@ -103,13 +103,13 @@ class NoticeMultisigGroupRotation(NotificationsBase):
                 controls=[
                     ft.Container(
                         ft.Text(value='Group Rotation Request', size=24),
-                        padding=ft.padding.only(10, 0, 10, 0),
+                        padding=ft.Padding.only(left=10, top=0, right=10, bottom=0),
                     ),
                     ft.Container(
-                        ft.IconButton(icon=ft.icons.CLOSE, on_click=self.cancel),
-                        alignment=ft.alignment.top_right,
+                        ft.IconButton(icon=ft.Icons.CLOSE, on_click=self.cancel),
+                        alignment=ft.Alignment.TOP_RIGHT,
                         expand=True,
-                        padding=ft.padding.only(0, 0, 10, 0),
+                        padding=ft.Padding.only(left=0, top=0, right=10, bottom=0),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -121,8 +121,8 @@ class NoticeMultisigGroupRotation(NotificationsBase):
         self.page.run_task(self.init_component)
 
     async def cancel(self, e):
-        self.app.page.route = '/notifications'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/notifications')
+        self.app.page.update()
 
     def participant_row(self, alias: str, pre: str, sthold, rthold) -> ft.DataRow:
         """Renders a single participant as a DataRow"""
@@ -150,9 +150,9 @@ class NoticeMultisigGroupRotation(NotificationsBase):
                         ft.Text('Refresh Key State:', width=175, weight=ft.FontWeight.BOLD),
                         ft.IconButton(
                             tooltip='Refresh key state',
-                            icon=ft.icons.REFRESH_ROUNDED,
+                            icon=ft.Icons.REFRESH_ROUNDED,
                             on_click=self.refresh_keystate,
-                            padding=ft.padding.only(right=10),
+                            padding=ft.Padding.only(right=10),
                         ),
                     ]
                 ),
@@ -173,7 +173,7 @@ class NoticeMultisigGroupRotation(NotificationsBase):
                 ft.Row(
                     [
                         self.btn_join,
-                        ft.ElevatedButton('Dismiss', on_click=self.dismiss),
+                        ft.Button('Dismiss', on_click=self.dismiss),
                         self.join_progress_ring,
                     ]
                 ),
@@ -314,12 +314,12 @@ class NoticeMultisigGroupRotation(NotificationsBase):
 
     async def show_progress_ring(self):
         self.join_progress_ring.visible = True
-        await self.page.update_async()
+        self.page.update()
 
     async def hide_progress_ring(self):
         self.join_progress_ring.visible = False
-        if self.page and self.page.update_async:  # may have navigated away so self.page may be None
-            await self.page.update_async()
+        if self.page and self.page.update:  # may have navigated away so self.page may be None
+            self.page.update()
 
     @log_errors
     async def join(self, e):
@@ -329,7 +329,7 @@ class NoticeMultisigGroupRotation(NotificationsBase):
         if self.group_alias.value == '':
             self.group_alias.border_color = Colouring.get(Colouring.RED)
             await self.app.snack('Enter an alias for the group')
-            await self.update_async()
+            self.update()
             return
 
         rid = e.control.data
@@ -351,9 +351,7 @@ class NoticeMultisigGroupRotation(NotificationsBase):
         if mhab is None:
             message = "Invalid multisig group inception request, aid list must contain a local identifier'"
             logger.error(message)
-            self.page.snack_bar = ft.SnackBar(ft.Text(message), duration=5000)
-            self.page.snack_bar.open = True
-            self.page.update()
+            await self.app.snack(message, duration=5000)
             return False
 
         pre = orot.ked['i']
@@ -412,16 +410,16 @@ class NoticeMultisigGroupRotation(NotificationsBase):
 
         logger.info(f'Group {group} rotation {serder.sn} joined')
         await self.app.snack(f'Group rotation for {group} complete at event {serder.sn}.')
-        self.app.page.route = f'/identifiers/{serder.pre}/view'
+        await self.app.page.push_route(f'/identifiers/{serder.pre}/view')
 
     async def dismiss(self, e):
-        self.app.page.route = '/notifications'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/notifications')
+        self.app.page.update()
 
     def panel(self):
         """The content returned for this notification control"""
         return ft.Container(
             self.content_col,
             expand=True,
-            padding=ft.padding.only(left=10, top=15, bottom=130),
+            padding=ft.Padding.only(left=10, top=15, bottom=130),
         )

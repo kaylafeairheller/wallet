@@ -57,7 +57,18 @@ def open_hby(name, base, bran, config_file, config_dir, app):
     except ValueError:
         logger.error(f'Open Habery failed on ValueError for {name}')
         raise
-    rgy = credentialing.Regery(hby=hby, name=hby.name, base=base, temp=False)
+
+    try:
+        rgy = credentialing.Regery(hby=hby, name=hby.name, base=base, temp=False)
+    except KeyError as e:
+        logger.error(f'Failed to load registries - orphaned registry references deleted AID: {e}')
+        logger.error(
+            'This can happen when an AID with a registry was deleted. You may need to manually clean up the registry data.'
+        )
+        raise RuntimeError(
+            f'Registry references deleted identifier {e}. Please delete the orphaned registry data or restore the identifier.'
+        ) from e
+
     return runController(app=app, hby=hby, rgy=rgy)
 
 

@@ -9,10 +9,10 @@ import flet as ft
 
 from wallet.app import colouring
 from wallet.app.credentialing.registry import RegistryBase
-from wallet.app.identifying.identifiers import Identifiers
 from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
+
 
 class Registries(RegistryBase):
     """
@@ -25,10 +25,14 @@ class Registries(RegistryBase):
 
     def __init__(self, app):
         self.app = app
-        self.page: ft.Page = app.page
+        self._page: ft.Page = app.page  # Store page reference (page property is read-only in Flet controls)
         self.list = ft.Column([], spacing=0, expand=True)
 
-        super().__init__(app, ft.Container(content=self.list, padding=ft.padding.only(bottom=125)))
+        super().__init__(app, ft.Container(content=self.list, padding=ft.Padding.only(bottom=125)))
+
+    @property
+    def page(self):
+        return self._page
 
     def did_mount(self):
         self.page.run_task(self.refresh_registries)
@@ -46,18 +50,38 @@ class Registries(RegistryBase):
         Sets the registries for the list view.
         """
         self.list.controls.clear()
-        for aid, rgy in self.app.agent.rgy.regs.items():
-            tip = 'Registry'
-            icon = ft.icons.FOLDER_OPEN
 
-            view = ft.PopupMenuItem(text='View', icon=ft.icons.PAGEVIEW, on_click=self.view_registry)
-            view.data = rgy
-            delete = ft.PopupMenuItem(
-                text='Delete',
-                icon=ft.icons.DELETE_FOREVER,
-                on_click=print('delete!'),
+        if not self.app.agent.rgy.regs:
+            self.list.controls.append(
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Icon(ft.Icons.FOLDER_OFF_OUTLINED, size=64, color=ft.Colors.ON_SURFACE_VARIANT),
+                            ft.Text('No registries yet', size=18, weight=ft.FontWeight.W_500),
+                            ft.Text(
+                                'Create a registry to start issuing credentials', size=14, color=ft.Colors.ON_SURFACE_VARIANT
+                            ),
+                        ],
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=10,
+                    ),
+                    padding=ft.Padding.all(40),
+                    alignment=ft.Alignment(0, 0),
+                    expand=True,
+                )
             )
-            delete.data = rgy
+            self.update()
+            return
+
+        # Sort registries alphabetically by name
+        sorted_regs = sorted(self.app.agent.rgy.regs.items(), key=lambda x: x[1].name.lower())
+
+        for aid, rgy in sorted_regs:
+            tip = 'Registry'
+            icon = ft.Icons.FOLDER_OPEN
+
+            view = ft.PopupMenuItem(content=ft.Text('View'), icon=ft.Icons.PAGEVIEW, on_click=self.view_registry)
+            view.data = rgy
 
             title_row = ft.Row(
                 [
@@ -79,10 +103,9 @@ class Registries(RegistryBase):
                 subtitle=title_row,
                 trailing=ft.PopupMenuButton(
                     tooltip=None,
-                    icon=ft.icons.MORE_VERT,
+                    icon=ft.Icons.MORE_VERT,
                     items=[
                         view,
-                        delete,
                     ],
                 ),
                 on_click=self.view_registry,
@@ -96,7 +119,19 @@ class Registries(RegistryBase):
             )
             self.list.controls.append(ft.Divider(opacity=0.1))
 
-        await self.update_async()
+        self.update()
+
+    async def add_registry(self, _):
+        """
+        Navigate to the create registry workflow.
+
+        Parameters:
+        - _: Placeholder parameter (unused)
+
+        Returns:
+        - None
+        """
+        await self.app.page.push_route('/workflows/registry/create')
 
     async def view_registry(self, e):
         """
@@ -109,7 +144,6 @@ class Registries(RegistryBase):
             None
         """
         rgy = e.control.data
-        pprint.pprint({"REGISTRY": rgy.__dict__})
-        pprint.pprint({"GROUP MULTISIG": rgy.hab.__dict__})
-        self.app.page.route = f'/registries/{rgy.regk}/view'
-        await self.app.page.update_async()
+        pprint.pprint({'REGISTRY': rgy.__dict__})
+        pprint.pprint({'GROUP MULTISIG': rgy.hab.__dict__})
+        await self.app.page.push_route(f'/registries/{rgy.regk}/view')

@@ -172,4 +172,5 @@ requirements.txt
 libsodium/libsodium.dylib
 
 # Wallet logs
+wallet.log
 wallet.log.*

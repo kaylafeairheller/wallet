@@ -3,30 +3,30 @@ import logging
 import flet as ft
 from keri.app import connecting, habbing
 
-from wallet.app import contacting, identifying, settings, splashing, credentialing
-from wallet.app.workflows.create_singlesig.create_identifier import CreateSingleSigIdentifierPanel
-from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMultisigIdentifierPanel
-from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
-from wallet.app.workflows.create_multisig.challenge_response import MultisigChallengeResponsePanel
-from wallet.app.workflows.create_multisig.create_identifier import CreateMultiSigPanel
-from wallet.app.workflows.create_registry.create_registry import CreateRegistryPanel
-from wallet.app.workflows.issuing.issue_ecr_auth import CreateIssueECRAuthPanel
-from wallet.app.workflows.issuing.issue_oor_auth import CreateIssueOORAuthPanel
-from wallet.app.workflows.issuing.issue_ecr_credential import CreateIssueECRCredentialPanel
-from wallet.app.workflows.issuing.issue_oor_credential import CreateIssueOORCredentialPanel
-from wallet.app.workflows.issuing.issue_qvi_credential import CreateIssueQVIPanel
-from wallet.app.workflows.issuing.issue_le_credential import CreateIssueLECredentialPanel
+from wallet.app import contacting, credentialing, identifying, settings, splashing
 from wallet.app.contacting.create_contact import CreateContactPanel
 from wallet.app.contacting.view_contact import ViewContactPanel
+from wallet.app.credentialing.view_registry import ViewRegistryPanel
+from wallet.app.home import Home
 from wallet.app.identifying.create_identifier import CreateIdentifierPanel
 from wallet.app.identifying.rotate_group_identifier import RotateGroupIdentifierPanel
 from wallet.app.identifying.rotate_identifier import RotateIdentifierPanel
 from wallet.app.identifying.view_identifer import ViewIdentifierPanel
 from wallet.app.naving import Navbar
-from wallet.app.home import Home
 from wallet.app.witnessing.add_witness import AddWitness
 from wallet.app.witnessing.view_witness import ViewWitness
 from wallet.app.witnessing.witnesses import Witnesses
+from wallet.app.workflows.create_multisig.challenge_response import MultisigChallengeResponsePanel
+from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
+from wallet.app.workflows.create_multisig.create_group_mutisig import CreateMultisigIdentifierPanel
+from wallet.app.workflows.create_registry.create_registry import CreateRegistryPanel
+from wallet.app.workflows.create_singlesig.create_identifier import CreateSingleSigIdentifierPanel
+from wallet.app.workflows.issuing.issue_ecr_auth import CreateIssueECRAuthPanel
+from wallet.app.workflows.issuing.issue_ecr_credential import CreateIssueECRCredentialPanel
+from wallet.app.workflows.issuing.issue_le_credential import CreateIssueLECredentialPanel
+from wallet.app.workflows.issuing.issue_oor_auth import CreateIssueOORAuthPanel
+from wallet.app.workflows.issuing.issue_oor_credential import CreateIssueOORCredentialPanel
+from wallet.app.workflows.issuing.issue_qvi_credential import CreateIssueQVIPanel
 from wallet.notifying.notifications import Notifications
 
 logger = logging.getLogger('wallet')
@@ -36,7 +36,7 @@ class Layout(ft.Row):
     def __init__(self, app, page: ft.Page, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = app
-        self.page = page
+        self._page = page  # Store page reference (page property is read-only in Flet controls)
         self.navbar = Navbar(page=page)
         self.home = Home(app)
         self.notifications = Notifications(app)
@@ -56,11 +56,13 @@ class Layout(ft.Row):
         self.view_container = ft.Container(
             content=self.active_view,
             expand=True,
-            clip_behavior=ft.ClipBehavior.HARD_EDGE,
-            alignment=ft.alignment.top_left,
-            height=page.window.height - 100 if hasattr(page.window, 'height') and page.window.height else None,
+            alignment=ft.Alignment.TOP_LEFT,
         )
         self.controls = [self.navbar, self.view_container]
+
+    @property
+    def page(self):
+        return self._page
 
     @property
     def active_view(self):
@@ -72,37 +74,50 @@ class Layout(ft.Row):
         self.view_container.content = self._active_view
 
     async def set_home(self):
-        self.active_view = self.home
+        self.home = Home(self.app)
+        self._active_view = self.home
+        self.view_container.content = self.home
         self.navbar.rail.selected_index = Navbar.HOME
         self.page.floating_action_button = None
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_witness_view(self, aid):
         org = connecting.Organizer(hby=self.app.hby)
         witness = org.get(aid)
         self.active_view = ViewWitness(app=self.app, witness=witness)
         self.page.floating_action_button = None
-        await self.update_async()
+        self.navbar.rail.selected_index = Navbar.WITNESSES
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_witnesses_view(self):
         self.active_view = Witnesses(app=self.app)
-        self.page.floating_action_button = ft.FloatingActionButton(icon=ft.icons.ADD, on_click=self.witnesses.add_witness)
-        await self.update_async()
+        self.page.floating_action_button = ft.FloatingActionButton(icon=ft.Icons.ADD, on_click=self.witnesses.add_witness)
+        self.navbar.rail.selected_index = Navbar.WITNESSES
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_witness_add_view(self):
         self.active_view = AddWitness(app=self.app)
         self.page.floating_action_button = None
-        await self.update_async()
+        self.navbar.rail.selected_index = Navbar.WITNESSES
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_identifiers_list(self):
         self.active_view = self.identifiers
-        self.page.floating_action_button = ft.FloatingActionButton(icon=ft.icons.ADD, on_click=self.identifiers.add_identifier)
+        self.page.floating_action_button = ft.FloatingActionButton(icon=ft.Icons.ADD, on_click=self.identifiers.add_identifier)
         self.navbar.rail.selected_index = Navbar.IDENTIFIERS
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_identifier_view(self, prefix):
         hab = self.app.hby.habs[prefix]
@@ -110,8 +125,9 @@ class Layout(ft.Row):
         self.page.floating_action_button = None
         self.navbar.rail.selected_index = Navbar.IDENTIFIERS
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_identifier_rotate(self, prefix):
         hab = self.app.hby.habs[prefix]
@@ -123,33 +139,36 @@ class Layout(ft.Row):
         self.page.floating_action_button = None
         self.navbar.rail.selected_index = Navbar.IDENTIFIERS
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_identifier_create(self):
         self.active_view = CreateIdentifierPanel(self.app)
         self.navbar.rail.selected_index = Navbar.IDENTIFIERS
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_contact_create(self):
         self.active_view = CreateContactPanel(self.app)
         self.navbar.rail.selected_index = Navbar.CONTACTS
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_contacts_list(self):
         self.active_view = self.contacts
         self.page.floating_action_button = ft.FloatingActionButton(
-            icon=ft.icons.ADD,
+            icon=ft.Icons.ADD,
             on_click=self.contacts.add_contact,
         )
         self.navbar.rail.selected_index = Navbar.CONTACTS
 
-        await self.navbar.update_async()
-        await self.page.update_async()
+        self.navbar.update()
+        self.page.update()
 
     async def set_contact_view(self, aid):
         org = connecting.Organizer(hby=self.app.hby)
@@ -157,67 +176,95 @@ class Layout(ft.Row):
         self.active_view = ViewContactPanel(app=self.app, contact=contact)
         self.navbar.rail.selected_index = Navbar.CONTACTS
 
-        await self.navbar.update_async()
-        await self.page.update_async()
+        self.navbar.update()
+        self.page.update()
 
     async def set_credentials_list(self):
         self.active_view = self.credentials
         self.page.floating_action_button = None
         self.navbar.rail.selected_index = Navbar.CREDENTIALS
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_registries_list(self):
         self.active_view = self.registries
+        self.page.floating_action_button = ft.FloatingActionButton(icon=ft.Icons.ADD, on_click=self.registries.add_registry)
+        self.navbar.rail.selected_index = Navbar.REGISTRIES
+
+        self.navbar.update()
+        self.update()
+        self.page.update()
+
+    async def set_registry_view(self, regk):
+        # Find registry by regk - try direct lookup first, then iterate
+        registry = self.app.agent.rgy.regs.get(regk)
+
+        if registry is None:
+            # Try matching by reg.regk property
+            for reg in self.app.agent.rgy.regs.values():
+                if reg.regk == regk:
+                    registry = reg
+                    break
+
+        if registry is None:
+            await self.app.snack(f'Registry not found: {regk}')
+            await self.set_registries_list()
+            return
+
+        self.active_view = ViewRegistryPanel(self.app, registry)
         self.page.floating_action_button = None
         self.navbar.rail.selected_index = Navbar.REGISTRIES
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_settings_view(self):
         self.active_view = self.settings
         self.navbar.rail.selected_index = Navbar.SETTINGS
 
-        await self.navbar.update_async()
-        await self.page.update_async()
+        self.navbar.update()
+        self.page.update()
 
     async def set_notifications_view(self):
         self.active_view = Notifications(self.app)
         self.navbar.rail.selected_index = None
 
-        await self.navbar.update_async()
-        await self.page.update_async()
+        self.navbar.update()
+        self.page.update()
 
     async def set_notifications_note_view(self, note_id):
         self.active_view = self.notifications.note_view(note_id)
         self.navbar.rail.selected_index = None
 
-        await self.navbar.update_async()
-        await self.page.update_async()
+        self.navbar.update()
+        self.page.update()
 
     async def set_splash_view(self):
         self.splash.visible = True
         self.active_view = self.splash
         self.navbar.rail.selected_index = None
 
-        await self.navbar.update_async()
-        await self.page.update_async()
+        self.navbar.update()
+        self.page.update()
 
     async def set_singlesig_identifier_create(self):
         self.active_view = CreateSingleSigIdentifierPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_multisig_identifier_create(self):
         self.active_view = CreateMultisigIdentifierPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_connect_contact(self, prefix):
         hab = self.app.hby.habs[prefix]
@@ -225,8 +272,9 @@ class Layout(ft.Row):
         self.navbar.rail.selected_index = Navbar.HOME
         self.page.floating_action_button = None
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_multisig_challenge(self, prefix, alias, aid):
         hab = self.app.hby.habs[prefix]
@@ -234,8 +282,9 @@ class Layout(ft.Row):
         self.navbar.rail.selected_index = Navbar.HOME
         self.page.floating_action_button = None
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     # async def set_create_multisig(self, prefix, alias, aid):
     #     print("PREFIX", prefix)
@@ -244,54 +293,61 @@ class Layout(ft.Row):
     #     self.navbar.rail.selected_index = Navbar.HOME
     #     self.page.floating_action_button = None
 
-    #     await self.navbar.update_async()
-    #     await self.update_async()
+    #     self.navbar.update()
+    #     self.update()
 
     async def set_create_registry(self):
         self.active_view = CreateRegistryPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_issue_qvi_credential(self):
         self.active_view = CreateIssueQVIPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_issue_le_credential(self):
         self.active_view = CreateIssueLECredentialPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_issue_ecr_auth(self):
         self.active_view = CreateIssueECRAuthPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_issue_ecr_credential(self):
         self.active_view = CreateIssueECRCredentialPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_issue_oor_auth(self):
         self.active_view = CreateIssueOORAuthPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()
 
     async def set_issue_oor_credential(self):
         self.active_view = CreateIssueOORCredentialPanel(self.app)
         self.navbar.rail.selected_index = Navbar.HOME
 
-        await self.navbar.update_async()
-        await self.update_async()
+        self.navbar.update()
+        self.update()
+        self.page.update()

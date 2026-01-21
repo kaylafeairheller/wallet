@@ -10,13 +10,15 @@ import random
 from urllib.parse import urljoin, urlparse
 
 import flet as ft
+import pyperclip
 import qrcode
-from flet_core import padding
+from flet import Padding
 from keri import kering
 from keri.app import habbing
 from keri.app.keeping import Algos
 from keri.db import dbing
 
+from wallet.app.identifying.abandon_confirm import AbandonIdentifierDialog
 from wallet.app.identifying.identifier import IdentifierBase
 from wallet.app.oobing.oobi_resolver_service import OOBIResolverService
 from wallet.logs import log_errors
@@ -84,6 +86,38 @@ class ViewIdentifierPanel(IdentifierBase):
                 )
             )
 
+        # Next Keys (digests of pre-rotated keys)
+        self.nextKeys = ft.Column()
+        self.is_abandoned = len(self.hab.kever.ndigers) == 0
+        if self.is_abandoned:
+            self.nextKeys.controls.append(
+                ft.Container(
+                    content=ft.Row(
+                        [
+                            ft.Icon(ft.Icons.BLOCK, color=ft.Colors.RED_400),
+                            ft.Text(
+                                'ABANDONED - No Next Keys',
+                                color=ft.Colors.RED_400,
+                                weight=ft.FontWeight.BOLD,
+                            ),
+                        ]
+                    ),
+                    bgcolor=ft.Colors.RED_100,
+                    padding=ft.Padding.all(10),
+                    border_radius=5,
+                )
+            )
+        else:
+            for idx, diger in enumerate(self.hab.kever.ndigers):
+                self.nextKeys.controls.append(
+                    ft.Row(
+                        [
+                            ft.Text(str(idx + 1)),
+                            ft.Text(diger.qb64, font_family='monospace'),
+                        ]
+                    )
+                )
+
         self.oobiTabs = ft.Column()
         self.oobi_qr = ft.Image(
             src='',
@@ -91,7 +125,7 @@ class ViewIdentifierPanel(IdentifierBase):
         self.oobi_url = ft.Text('')
         self.oobi_copy = ft.IconButton()
 
-        self.resubmit_button = ft.ElevatedButton(
+        self.resubmit_button = ft.Button(
             'Resubmit',
             on_click=self.resubmit,
         )
@@ -125,13 +159,13 @@ class ViewIdentifierPanel(IdentifierBase):
                 controls=[
                     ft.Container(
                         ft.Text(value=f'Alias: {self.hab.name}', size=24),
-                        padding=ft.padding.only(10, 0, 10, 0),
+                        padding=ft.Padding.only(left=10, top=0, right=10, bottom=0),
                     ),
                     ft.Container(
-                        ft.IconButton(icon=ft.icons.CLOSE, on_click=self.cancel),
-                        alignment=ft.alignment.top_right,
+                        ft.IconButton(icon=ft.Icons.CLOSE, on_click=self.cancel),
+                        alignment=ft.Alignment.TOP_RIGHT,
                         expand=True,
-                        padding=ft.padding.only(0, 0, 10, 0),
+                        padding=ft.Padding.only(left=0, top=0, right=10, bottom=0),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -152,13 +186,10 @@ class ViewIdentifierPanel(IdentifierBase):
         f.seek(0)
 
         async def copy(e):
-            await self.app.page.set_clipboard_async(e.control.data)
-            self.page.snack_bar = ft.SnackBar(ft.Text('OOBI URL Copied!'), duration=2000)
+            pyperclip.copy(e.control.data)
+            await self.app.snack('OOBI URL Copied!', duration=2000)
 
-            self.page.snack_bar.open = True
-            await self.page.update_async()
-
-        self.oobi_qr = ft.Image(src_base64=base64.b64encode(f.read()).decode('utf-8'), width=175)
+        self.oobi_qr = ft.Image(src=f'data:image/png;base64,{base64.b64encode(f.read()).decode("utf-8")}', width=175)
         self.oobi_url = ft.Container(
             content=ft.Text(
                 value=oobi,
@@ -172,7 +203,7 @@ class ViewIdentifierPanel(IdentifierBase):
             on_click=copy,
             data=oobi,
         )
-        self.oobi_copy = ft.IconButton(icon=ft.icons.COPY_ROUNDED, data=oobi, on_click=copy, tooltip='Copy OOBI')
+        self.oobi_copy = ft.IconButton(icon=ft.Icons.COPY_ROUNDED, data=oobi, on_click=copy, tooltip='Copy OOBI')
 
         self.oobiTabs.controls.clear()
         self.oobiTabs.controls.append(
@@ -180,7 +211,7 @@ class ViewIdentifierPanel(IdentifierBase):
                 [
                     ft.Row([self.oobi_url, self.oobi_copy]),
                     ft.Row([self.oobi_qr]),
-                    ft.Container(padding=ft.padding.only(top=6)),
+                    ft.Container(padding=ft.Padding.only(top=6)),
                 ]
             )
         )
@@ -189,15 +220,13 @@ class ViewIdentifierPanel(IdentifierBase):
 
     async def reset_oobi(self):
         self.oobiTabs.controls.clear()
-        await self.update_async()
+        self.update()
 
     async def layout_oobi(self, e):
         if not self.generate_oobi(e.data):
-            self.page.snack_bar = ft.SnackBar(ft.Text(f'No {e} OOBIs'), duration=2000)
-            await self.page.update_async()
-
+            await self.app.snack(f'No {e.data} OOBIs', duration=2000)
             await self.reset_oobi()
-        await self.update_async()
+        self.update()
 
     @log_errors
     async def refresh_keystate(self, e):
@@ -220,7 +249,7 @@ class ViewIdentifierPanel(IdentifierBase):
         await self.app.snack(f'Resubmitting {self.hab.pre} for witness receipts.')
         self.resubmit_button.visible = False
         self.submit_refresh_row.visible = True
-        await self.page.update_async()
+        self.page.update()
 
         updated = False
         while not updated:
@@ -232,10 +261,10 @@ class ViewIdentifierPanel(IdentifierBase):
         if updated:
             self.submit_refresh_row.visible = False
             await self.app.snack(f'Received all witness receipts for {self.hab.pre}.')
-            await self.page.update_async()
+            self.page.update()
         else:
             await self.app.snack(f'Failed to receive witness receipts for {self.hab.pre}.')
-            await self.page.update_async()
+            self.page.update()
             self.submit_refresh_row.visible = False
             self.resubmit_button.visible = True
 
@@ -243,26 +272,28 @@ class ViewIdentifierPanel(IdentifierBase):
         del e
         """Navigate to the single sig rotate panel."""
         hab = self.hab
-        self.app.page.route = f'/identifiers/{hab.pre}/rotate'
-        await self.app.page.update_async()
+        await self.app.page.push_route(f'/identifiers/{hab.pre}/rotate')
+
+    @log_errors
+    async def abandon_identifier(self, e):
+        """Open the abandon identifier confirmation dialog."""
+        del e
+        dialog = AbandonIdentifierDialog(self.app)
+        await dialog.open_confirm(self.hab)
 
     async def cancel(self, e):
-        self.app.page.route = '/identifiers'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/identifiers')
+        self.app.page.update()
 
     async def cb_copy_digest(self, e):
         """copies the latest event digest to clipboard"""
-        await self.app.page.set_clipboard_async(e.control.data)
-        self.page.snack_bar = ft.SnackBar(ft.Text('Event Digest Copied!'), duration=2000)
-        self.page.snack_bar.open = True
-        await self.page.update_async()
+        pyperclip.copy(e.control.data)
+        await self.app.snack('Event Digest Copied!', duration=2000)
 
     async def cb_copy_sn(self, e):
         """copies the latest event sequence number to clipboard"""
-        await self.app.page.set_clipboard_async(f'{e.control.data}')
-        self.page.snack_bar = ft.SnackBar(ft.Text('Sequence Number Copied!'), duration=2000)
-        self.page.snack_bar.open = True
-        await self.page.update_async()
+        pyperclip.copy(f'{e.control.data}')
+        await self.app.snack('Sequence Number Copied!', duration=2000)
 
     def panel(self):
         kever = self.hab.kever
@@ -284,7 +315,7 @@ class ViewIdentifierPanel(IdentifierBase):
                             ft.Text('Sequence Number:', weight=ft.FontWeight.BOLD, width=175),
                             ft.Container(content=ft.Text(kever.sner.num), on_click=self.cb_copy_sn, data=kever.sner.num),
                             ft.IconButton(
-                                icon=ft.icons.COPY_ROUNDED,
+                                icon=ft.Icons.COPY_ROUNDED,
                                 data=kever.sner.num,
                                 on_click=self.cb_copy_sn,
                                 tooltip='Copy Sequence Number',
@@ -300,7 +331,7 @@ class ViewIdentifierPanel(IdentifierBase):
                                 data=kever.serder.ked['d'],
                             ),
                             ft.IconButton(
-                                icon=ft.icons.COPY_ROUNDED,
+                                icon=ft.Icons.COPY_ROUNDED,
                                 data=kever.serder.ked['d'],
                                 on_click=self.cb_copy_digest,
                                 tooltip='Copy Digest',
@@ -315,9 +346,9 @@ class ViewIdentifierPanel(IdentifierBase):
                                     ft.Text('Refresh Key State:', width=175, weight=ft.FontWeight.BOLD),
                                     ft.IconButton(
                                         tooltip='Refresh key state',
-                                        icon=ft.icons.REFRESH_ROUNDED,
+                                        icon=ft.Icons.REFRESH_ROUNDED,
                                         on_click=self.refresh_keystate,
-                                        padding=padding.only(right=10),
+                                        padding=Padding.only(right=10),
                                     ),
                                 ]
                             ),
@@ -412,7 +443,7 @@ class ViewIdentifierPanel(IdentifierBase):
                             ft.Row(
                                 controls=[
                                     ft.IconButton(
-                                        icon=ft.icons.ROTATE_LEFT_ROUNDED,
+                                        icon=ft.Icons.ROTATE_LEFT_ROUNDED,
                                         on_click=self.rotate_identifier,
                                         tooltip='Rotate',
                                     )
@@ -420,28 +451,44 @@ class ViewIdentifierPanel(IdentifierBase):
                             ),
                         ]
                     ),
-                    ft.Container(content=self.publicKeys, padding=ft.padding.only(left=40)),
+                    ft.Container(content=self.publicKeys, padding=ft.Padding.only(left=40)),
+                    ft.Divider(),
+                    ft.Row(
+                        [
+                            ft.Text(
+                                'Next Keys:',
+                                weight=ft.FontWeight.BOLD,
+                                width=175,
+                                color=ft.Colors.RED_400 if self.is_abandoned else None,
+                            ),
+                            ft.Text(
+                                f'({len(self.hab.kever.ndigers)} key digest{"s" if len(self.hab.kever.ndigers) != 1 else ""})',
+                                color=ft.Colors.RED_400 if self.is_abandoned else ft.Colors.ON_SURFACE_VARIANT,
+                            ),
+                        ]
+                    ),
+                    ft.Container(content=self.nextKeys, padding=ft.Padding.only(left=40)),
                     ft.Divider(),
                     ft.Row(
                         [
                             ft.Text('Generate OOBI:', weight=ft.FontWeight.BOLD, width=175),
                             ft.Dropdown(
                                 options=[
-                                    ft.dropdown.Option(
+                                    ft.DropdownOption(
                                         key=kering.Roles.controller,
                                         text=kering.Roles.controller.capitalize(),
                                     ),
-                                    ft.dropdown.Option(
+                                    ft.DropdownOption(
                                         key=kering.Roles.mailbox,
                                         text=kering.Roles.mailbox.capitalize(),
                                     ),
-                                    ft.dropdown.Option(
+                                    ft.DropdownOption(
                                         key=kering.Roles.witness,
                                         text=kering.Roles.witness.capitalize(),
                                     ),
                                 ],
                                 value=kering.Roles.witness,
-                                on_change=self.layout_oobi,
+                                on_select=self.layout_oobi,
                             ),
                         ]
                     ),
@@ -451,18 +498,27 @@ class ViewIdentifierPanel(IdentifierBase):
                     ft.Divider(),
                     ft.Row(
                         [
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Close',
                                 on_click=self.close,
-                            )
+                            ),
+                            ft.Button(
+                                'Abandon',
+                                on_click=self.abandon_identifier,
+                                icon=ft.Icons.BLOCK,
+                                style=ft.ButtonStyle(
+                                    color=ft.Colors.RED_400,
+                                ),
+                                visible=not self.is_abandoned,
+                            ),
                         ]
                     ),
                 ],
                 scroll=ft.ScrollMode.ALWAYS,
             ),
             expand=True,
-            alignment=ft.alignment.top_left,
-            padding=padding.only(left=10, bottom=80),
+            alignment=ft.Alignment.TOP_LEFT,
+            padding=Padding.only(left=10, bottom=80),
         )
 
     def loadOOBIs(self, role):
@@ -512,5 +568,5 @@ class ViewIdentifierPanel(IdentifierBase):
         return []
 
     async def close(self, _):
-        self.app.page.route = '/identifiers'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/identifiers')
+        self.app.page.update()

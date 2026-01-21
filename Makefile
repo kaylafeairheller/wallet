@@ -14,11 +14,20 @@ build-macos: clean version
 	@uv run flet build macos
 
 dev: version
-	@export FLET_DEBUG=1; export WALLET_ENVIRONMENT=development; uv run flet run main.py
+	@export FLET_DEBUG=1; export WALLET_ENVIRONMENT=development; uv run python main.py
+
+debug: version
+	@export FLET_DEBUG=1; export WALLET_ENVIRONMENT=development; uv run python main.py --debug
 
 fmt:
 	@uv tool run ruff check --select I --fix
 	@uv tool run ruff format
+
+lint:
+	@uv run ruff check wallet/
+
+typecheck:
+	@uv run mypy wallet/
 
 # used by ci
 check:

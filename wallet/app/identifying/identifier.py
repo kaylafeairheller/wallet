@@ -31,7 +31,7 @@ class IdentifierBase(ft.Column):
         self.card = ft.Container(
             content=self.panel,
             expand=True,
-            alignment=ft.alignment.top_left,
+            alignment=ft.Alignment.TOP_LEFT,
         )
 
         super().__init__(
@@ -47,11 +47,10 @@ class IdentifierBase(ft.Column):
     def loadIssuers(agent):
         habs = agent.hby.habs.values()
         return [
-            ft.dropdown.Option(
+            ft.DropdownOption(
                 key=hab.pre,
                 text=f'{hab.name} | {hab.pre}',
                 data=hab,
             )
             for hab in habs
         ]
-    

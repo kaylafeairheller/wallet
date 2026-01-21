@@ -303,7 +303,7 @@ class KELStateReader(doing.DoDoer):
         elif len(bhds) > 0:
             logger.debug(f'{len(bhds)} witnesses are behind and need to be caught up.')
             for state in bhds:
-                print(f'\tWitness {state.wit} at Seq No. {state.sn} SAID: {state.dig}')
+                logger.debug(f'Witness {state.wit} at Seq No. {state.sn} SAID: {state.dig}')
                 wit_updates.append(self.create_wit_update(hab.pre, state))
         else:
             logger.debug(
@@ -344,7 +344,7 @@ class KELStateUpdater(doing.DoDoer):
             await identifiers.refresh_identifiers()
             await self.app.page.dialog.close_confirm()
             self.app.page.dialog = None
-            await self.app.page.update_async()
+            self.app.page.update()
 
     def updateDo(self, tymth, tock=0.0, **opts):
         # enter context

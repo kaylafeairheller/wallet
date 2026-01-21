@@ -1,10 +1,11 @@
 import logging
 
 import flet as ft
-from flet_core import FontWeight, padding
-from keri.app import connecting
+from flet import FontWeight, Padding
+from keri.app import connecting, habbing
 
-from wallet.app.workflows.issuing.issuer import IssuerBase
+from wallet.app.workflows.issuing.issuer import SCHEMA_LE, SCHEMA_QVI, IssuerBase
+from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
 
@@ -23,23 +24,23 @@ class CreateIssueLECredentialPanel(IssuerBase):
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
         self.registryDropdown = ft.Dropdown(
-            options=IssuerBase.loadRegistries(),
+            options=IssuerBase.loadRegistries(self.app.agent),
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
-        self.leCredentialsDropdown = ft.Dropdown(
-            options=IssuerBase.loadLECredentials(),
+        self.qviCredentialsDropdown = ft.Dropdown(
+            options=IssuerBase.loadCredentialsBySchema(self.app.agent, SCHEMA_QVI),
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
         self.contactsDropdown = ft.Dropdown(
@@ -47,7 +48,7 @@ class CreateIssueLECredentialPanel(IssuerBase):
             width=550,
             text_size=14,
             text_style=ft.TextStyle(font_family='monospace'),
-            on_change=self.save_selection,
+            on_select=self.save_selection,
         )
 
         self.leiTextField = ft.TextField(
@@ -61,8 +62,28 @@ class CreateIssueLECredentialPanel(IssuerBase):
 
     def save_selection(self, e: ft.ControlEvent):
         selected_value = e.control.value
-        print(f"User selected: {selected_value}")
-    
+        logger.debug(f'User selected: {selected_value}')
+
+    def validate_form(self) -> tuple:
+        """Validate all required fields are filled.
+
+        Returns:
+            tuple: (is_valid: bool, error_message: str or None)
+        """
+        if not self.issuerDropdown.value:
+            return (False, 'Please select an issuer')
+        if not self.registryDropdown.value:
+            return (False, 'Please select a registry')
+        if not self.qviCredentialsDropdown.value:
+            return (False, 'Please select a QVI credential for the edge')
+        if not self.contactsDropdown.value:
+            return (False, 'Please select a recipient')
+        if not self.leiTextField.value:
+            return (False, 'Please enter the LEI')
+        if len(self.leiTextField.value) != 20:
+            return (False, 'LEI must be exactly 20 characters')
+        return (True, None)
+
     def panel(self):
         return ft.Container(
             content=ft.Column(
@@ -85,7 +106,7 @@ class CreateIssueLECredentialPanel(IssuerBase):
                                 controls=[
                                     self.issuerDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -102,7 +123,7 @@ class CreateIssueLECredentialPanel(IssuerBase):
                                 controls=[
                                     self.registryDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -117,9 +138,9 @@ class CreateIssueLECredentialPanel(IssuerBase):
                             ),
                             ft.Row(
                                 controls=[
-                                    self.leCredentialsDropdown,
+                                    self.qviCredentialsDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -136,7 +157,7 @@ class CreateIssueLECredentialPanel(IssuerBase):
                                 controls=[
                                     self.contactsDropdown,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Column(
@@ -153,16 +174,16 @@ class CreateIssueLECredentialPanel(IssuerBase):
                                 controls=[
                                     self.leiTextField,
                                 ],
-                            )
+                            ),
                         ]
                     ),
                     ft.Row(
                         [
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Issue',
                                 on_click=self.issue,
                             ),
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Cancel',
                                 on_click=self.cancel,
                             ),
@@ -171,15 +192,65 @@ class CreateIssueLECredentialPanel(IssuerBase):
                 ],
             ),
             expand=True,
-            alignment=ft.alignment.top_left,
-            padding=padding.only(bottom=105),
+            alignment=ft.Alignment.TOP_LEFT,
+            padding=Padding.only(bottom=105),
         )
-    
+
+    @log_errors
     async def issue(self, _):
-        await self.app.snack(f'Issuing LE Credential...')
-        self.app.page.route = f'/home'
-        await self.page.update_async()
+        # Validate form fields
+        is_valid, error_msg = self.validate_form()
+        if not is_valid:
+            await self.app.snack(error_msg)
+            return
+
+        await self.app.snack('Issuing LE Credential...')
+
+        # Build credential data
+        data = {
+            'LEI': self.leiTextField.value,
+        }
+
+        # Build source edge referencing the QVI credential
+        source = {
+            'qvi': {
+                'n': self.qviCredentialsDropdown.value,
+                's': SCHEMA_QVI,
+            }
+        }
+
+        # Issue the credential
+        creder, success, error = await IssuerBase.issue_credential(
+            app=self.app,
+            registry_key=self.registryDropdown.value,
+            recipient=self.contactsDropdown.value,
+            schema=SCHEMA_LE,
+            data=data,
+            source=source,
+        )
+
+        if not success:
+            await self.app.snack(f'Error issuing credential: {error}')
+            return
+
+        # Check if this is a multisig - need to wait for other participants
+        registry = None
+        for reg in self.app.agent.rgy.regs.values():
+            if reg.regk == self.registryDropdown.value:
+                registry = reg
+                break
+
+        if registry and isinstance(registry.hab, habbing.GroupHab):
+            await self.app.snack('Credential issuance initiated. Waiting for other participants to approve...')
+
+        # Wait for credential completion
+        completed = await IssuerBase.wait_for_completion(self.app, creder.said)
+
+        if completed:
+            await self.app.snack('LE Credential issued successfully!')
+            await self.app.page.push_route('/credentials')
+        else:
+            await self.app.snack('Credential issuance timed out. Check notifications for status.')
 
     async def cancel(self, _):
-        self.app.page.route = '/home'
-        await self.page.update_async()
+        await self.app.page.push_route('/home')

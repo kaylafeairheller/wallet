@@ -40,7 +40,7 @@ class KomerBase:
         schema: Type[dataclass],  # class not instance
         kind: str = coring.Serials.json,
         dupsort: bool = False,
-        sep: str = None,
+        sep: str | None = None,
         **kwa,
     ):
         """

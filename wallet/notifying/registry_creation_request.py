@@ -2,12 +2,13 @@ import asyncio
 import logging
 
 import flet as ft
-from keri.core import eventing, serdering
 from keri import kering
+from keri.core import serdering
 
 from wallet.app.colouring import Colouring
-from wallet.notifying.notification import NotificationsBase
 from wallet.logs import log_errors
+from wallet.notifying.notification import NotificationsBase
+
 logger = logging.getLogger('wallet')
 
 
@@ -36,9 +37,8 @@ class NoticeRegistryCreation(NotificationsBase):
 
     def __init__(self, app, note):
         self.app = app
-        print("~~~ REGISTRY CREATION NOTE ~~~~")
-        print("NOTE", note.__dict__)
-        print("ATTRS", note.attrs)
+        logger.debug(f'Registry creation note: {note.__dict__}')
+        logger.debug(f'Registry creation attrs: {note.attrs}')
         self.note = note
         self.said = note.attrs['d']
         self.mhab = None
@@ -47,7 +47,7 @@ class NoticeRegistryCreation(NotificationsBase):
         self.signing_members = []
         self.rotation_members = []
 
-        self.btn_create = ft.ElevatedButton(
+        self.btn_create = ft.Button(
             'Create',
             on_click=self.create,
             data=note.rid,
@@ -102,13 +102,13 @@ class NoticeRegistryCreation(NotificationsBase):
                 controls=[
                     ft.Container(
                         ft.Text(value='Registry Creation Request', size=24),
-                        padding=ft.padding.only(10, 0, 10, 0),
+                        padding=ft.Padding.only(left=10, top=0, right=10, bottom=0),
                     ),
                     ft.Container(
-                        ft.IconButton(icon=ft.icons.CLOSE, on_click=self.cancel),
-                        alignment=ft.alignment.top_right,
+                        ft.IconButton(icon=ft.Icons.CLOSE, on_click=self.cancel),
+                        alignment=ft.Alignment.TOP_RIGHT,
                         expand=True,
-                        padding=ft.padding.only(0, 0, 10, 0),
+                        padding=ft.Padding.only(left=0, top=0, right=10, bottom=0),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -117,8 +117,8 @@ class NoticeRegistryCreation(NotificationsBase):
         )
 
     async def cancel(self, e):
-        self.app.page.route = '/notifications'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/notifications')
+        self.app.page.update()
 
     def did_mount(self):
         self.page.run_task(self.get_exchange_message)
@@ -137,41 +137,39 @@ class NoticeRegistryCreation(NotificationsBase):
             await asyncio.sleep(1)
 
         cloned = self.app.agent.cloner.cloned[self.said]
-
-        print(cloned.__dict__)
-
+        logger.debug(f'Cloned exn: {cloned.__dict__}')
         self.ked = cloned.ked
 
         org = self.app.agent.org
-       
+
         self.local_identifier = self.ked['i']
         alias = org.get(self.local_identifier)['alias']
         await self.add_member(self.local_identifier, 'Local Identifier', alias)
 
         self.multisig_gid = self.ked['a']['gid']
         ghab = self.app.agent.hby.habByPre(self.multisig_gid)
-        print(ghab.__dict__)
+        logger.debug(f'Group hab: {ghab.__dict__}')
         await self.add_member(self.multisig_gid, 'Alias', ghab.name)
 
         self.registry_id.value = self.ked['d']
-        
+
         self.group_info_pacifier.visible = False
         self.group_info.visible = True
         self.btn_create.disabled = False
 
-        await self.update_async()
+        self.update()
 
         return None
-    
+
     async def add_member(self, member, label, alias):
         self.members_list.controls.append(
-                ft.TextField(
-                    label=label + ": " + alias,
-                    value=member,
-                    read_only=True,
-                    text_style=ft.TextStyle(font_family='monospace'),
-                )
+            ft.TextField(
+                label=label + ': ' + alias,
+                value=member,
+                read_only=True,
+                text_style=ft.TextStyle(font_family='monospace'),
             )
+        )
 
     def panel(self):
         """
@@ -188,15 +186,15 @@ class NoticeRegistryCreation(NotificationsBase):
                     ft.Row(
                         [
                             self.btn_create,
-                            ft.ElevatedButton('Dismiss', on_click=self.dismiss),
+                            ft.Button('Dismiss', on_click=self.dismiss),
                         ]
                     ),
-                    ft.Container(padding=ft.padding.only(bottom=80)),
+                    ft.Container(padding=ft.Padding.only(bottom=80)),
                 ],
                 scroll=ft.ScrollMode.AUTO,
             ),
             expand=True,
-            padding=ft.padding.only(left=10, top=15, bottom=100),
+            padding=ft.Padding.only(left=10, top=15, bottom=100),
         )
 
     @log_errors
@@ -223,7 +221,7 @@ class NoticeRegistryCreation(NotificationsBase):
         if self.registry_name.value == '':
             self.registry_name.border_color = Colouring.get(Colouring.RED)
             await self.app.snack('Enter a name for the registry')
-            await self.update_async()
+            self.update()
             return
 
         inits = {}
@@ -240,13 +238,17 @@ class NoticeRegistryCreation(NotificationsBase):
         inits['wits'] = oicp.ked['b']
         inits['delpre'] = oicp.ked['di'] if 'di' in self.ked else None
 
-        ghab = self.app.hby.makeGroupHab(
-            group=self.group_alias.value,
-            mhab=self.mhab,
-            smids=self.signing_members,
-            rmids=self.rotation_members,
-            **inits,
-        )
+        try:
+            ghab = self.app.hby.makeGroupHab(
+                group=self.group_alias.value,
+                mhab=self.mhab,
+                smids=self.signing_members,
+                rmids=self.rotation_members,
+                **inits,
+            )
+        except Exception as ex:
+            await self.app.snack(f'Error joining group: {ex}')
+            return
 
         self.app.agent.groups.append(dict(serder=oicp))
         self.app.agent.joining[ghab.pre] = rid
@@ -261,5 +263,5 @@ class NoticeRegistryCreation(NotificationsBase):
         Returns:
             None
         """
-        self.app.page.route = '/notifications'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/notifications')
+        self.app.page.update()

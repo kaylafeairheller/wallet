@@ -29,7 +29,6 @@ from keri.vc import protocoling
 from keri.vdr import credentialing, verifying
 from keri.vdr.eventing import Tevery
 
-from wallet.app.colouring import Colouring
 from wallet.core.grouping import GroupRequester
 from wallet.core.syncing import KELStateReader, KELStateUpdater
 from wallet.logs import log_errors
@@ -295,16 +294,16 @@ class Noter(doing.Doer):
         await self.app.snack('New notifications')
 
     async def show_unread(self):
-        self.app.notificationsButton.icon = ft.icons.NOTIFICATIONS_ACTIVE_ROUNDED
-        await self.app.page.update_async()
+        self.app.notificationsButton.icon = ft.Icons.NOTIFICATIONS_ACTIVE_ROUNDED
+        self.app.page.update()
 
     async def show_read(self):
-        self.app.notificationsButton.icon = ft.icons.NOTIFICATIONS_ROUNDED
-        await self.app.page.update_async()
+        self.app.notificationsButton.icon = ft.Icons.NOTIFICATIONS_ROUNDED
+        self.app.page.update()
 
     async def show_no_notifications(self):
-        self.app.notificationsButton.icon = ft.icons.NOTIFICATIONS_NONE_ROUNDED
-        await self.app.page.update_async()
+        self.app.notificationsButton.icon = ft.Icons.NOTIFICATIONS_NONE_ROUNDED
+        self.app.page.update()
 
     def enter(self):
         self.count = self.notifier.getNoteCnt()

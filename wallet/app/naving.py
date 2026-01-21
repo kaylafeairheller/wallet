@@ -12,50 +12,50 @@ class Navbar(ft.Stack):
 
     def __init__(self, page: ft.Page):
         super().__init__()
-        self.page = page
+        self._page = page  # Store page reference (page property is read-only in Flet controls)
 
         destinations = [
             ft.NavigationRailDestination(
-                icon_content=ft.Icon(ft.icons.HOME),
-                selected_icon_content=ft.Icon(ft.icons.HOME_OUTLINED),
+                icon=ft.Icon(ft.Icons.HOME),
+                selected_icon=ft.Icon(ft.Icons.HOME_OUTLINED),
                 label='Home',
-                padding=ft.padding.all(10),
+                padding=ft.Padding.all(10),
             ),
             ft.NavigationRailDestination(
-                icon=ft.icons.DATASET_LINKED,
-                selected_icon=ft.icons.DATASET_LINKED_OUTLINED,
+                icon=ft.Icons.DATASET_LINKED,
+                selected_icon=ft.Icons.DATASET_LINKED_OUTLINED,
                 label='Identifiers',
-                padding=ft.padding.all(10),
+                padding=ft.Padding.all(10),
             ),
             ft.NavigationRailDestination(
-                icon=ft.icons.ACCOUNT_TREE_OUTLINED,
-                selected_icon=ft.icons.ACCOUNT_TREE,
+                icon=ft.Icons.ACCOUNT_TREE_OUTLINED,
+                selected_icon=ft.Icons.ACCOUNT_TREE,
                 label='Registries',
-                padding=ft.padding.all(10),
+                padding=ft.Padding.all(10),
             ),
             ft.NavigationRailDestination(
-                icon=ft.icons.LOCK_OUTLINED,
-                selected_icon=ft.icons.LOCK_ROUNDED,
+                icon=ft.Icons.LOCK_OUTLINED,
+                selected_icon=ft.Icons.LOCK_ROUNDED,
                 label='Credentials',
-                padding=ft.padding.all(10),
+                padding=ft.Padding.all(10),
             ),
             ft.NavigationRailDestination(
-                icon_content=ft.Icon(ft.icons.PEOPLE),
-                selected_icon_content=ft.Icon(ft.icons.PEOPLE_OUTLINE),
+                icon=ft.Icon(ft.Icons.PEOPLE),
+                selected_icon=ft.Icon(ft.Icons.PEOPLE_OUTLINE),
                 label='Contacts',
-                padding=ft.padding.all(10),
+                padding=ft.Padding.all(10),
             ),
             ft.NavigationRailDestination(
-                icon_content=ft.Icon(ft.icons.VIEW_COMFY_ALT),
-                selected_icon_content=ft.Icon(ft.icons.VIEW_COMFY_ALT_OUTLINED),
+                icon=ft.Icon(ft.Icons.VIEW_COMFY_ALT),
+                selected_icon=ft.Icon(ft.Icons.VIEW_COMFY_ALT_OUTLINED),
                 label='Witnesses',
-                padding=ft.padding.all(10),
+                padding=ft.Padding.all(10),
             ),
             ft.NavigationRailDestination(
-                icon=ft.icons.SETTINGS_OUTLINED,
-                selected_icon_content=ft.Icon(ft.icons.SETTINGS),
-                label_content=ft.Text('Settings'),
-                padding=ft.padding.all(10),
+                icon=ft.Icons.SETTINGS_OUTLINED,
+                selected_icon=ft.Icon(ft.Icons.SETTINGS),
+                label=ft.Text('Settings'),
+                padding=ft.Padding.all(10),
             ),
         ]
 
@@ -68,26 +68,29 @@ class Navbar(ft.Stack):
             on_change=self.nav_change,
             expand=True,
         )
+        # Flet 1.0 declarative: set controls directly
+        self.controls = [self.rail]
 
-    def build(self):
-        return self.rail
+    @property
+    def page(self):
+        return self._page
 
     async def nav_change(self, e):
         index = e if (type(e) is int) else e.control.selected_index
         self.rail.selected_index = index
         if index == self.HOME:
-            self.page.route = '/home'
+            await self.page.push_route('/home')
         elif index == self.IDENTIFIERS:
-            self.page.route = '/identifiers'
+            await self.page.push_route('/identifiers')
         elif index == self.REGISTRIES:
-            self.page.route = '/registries'
+            await self.page.push_route('/registries')
         elif index == self.CREDENTIALS:
-            self.page.route = '/credentials'
+            await self.page.push_route('/credentials')
         elif index == self.CONTACTS:
-            self.page.route = '/contacts'
+            await self.page.push_route('/contacts')
         elif index == self.WITNESSES:
-            self.page.route = '/witnesses'
+            await self.page.push_route('/witnesses')
         elif index == self.SETTINGS:
-            self.page.route = '/settings'
+            await self.page.push_route('/settings')
 
-        await self.page.update_async()
+        self.page.update()

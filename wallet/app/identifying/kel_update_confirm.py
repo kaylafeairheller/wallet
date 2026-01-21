@@ -40,14 +40,14 @@ class KELUpdateConfirmDialog(ft.AlertDialog):
                 width=300,
             ),
             actions=[
-                ft.OutlinedButton(text='Cancel', on_click=self.close_confirm),
-                ft.ElevatedButton(text='Confirm', on_click=self.confirm_update),
+                ft.OutlinedButton(content='Cancel', on_click=self.close_confirm),
+                ft.Button(content='Confirm', on_click=self.confirm_update),
             ],
         )
         self.can_timeout = False
 
     def will_unmount(self):
-        print('Unmounting dialog')
+        logger.debug('Unmounting KEL update dialog')
 
     async def finish_confirm(self, event_type, timeout=15):
         """Event handler for KEL_UPDATE_COMPLETE"""
@@ -74,7 +74,7 @@ class KELUpdateConfirmDialog(ft.AlertDialog):
         self.hab = hab
         self.aid_update = aid_update
         self.open = True
-        await self.app.page.update_async()
+        self.app.page.update()
 
     async def update_identifier_page(self):
         if self.app.layout.active_view == self.app.layout.identifiers:
@@ -82,7 +82,7 @@ class KELUpdateConfirmDialog(ft.AlertDialog):
             await identifiers.refresh_identifiers()
             await self.app.page.dialog.close_confirm()
             self.app.page.dialog = None
-            await self.app.page.update_async()
+            self.app.page.update()
 
     async def close_confirm(self, _):
         """
@@ -91,7 +91,7 @@ class KELUpdateConfirmDialog(ft.AlertDialog):
         self.open = False
         self.close_task.cancel()
         self.app.page.run_task(self.update_identifier_page)
-        await self.page.update_async()
+        self.page.update()
 
     async def show_error(self, message):
         """
@@ -99,7 +99,7 @@ class KELUpdateConfirmDialog(ft.AlertDialog):
         """
         self.error_text.value = message
         self.error_text.visible = True
-        await self.page.update_async()
+        self.page.update()
         await self.app.snack(message, duration=3000)
 
     async def hide_error(self):
@@ -108,7 +108,7 @@ class KELUpdateConfirmDialog(ft.AlertDialog):
         """
         self.error_text.value = ''
         self.error_text.visible = False
-        await self.page.update_async()
+        self.page.update()
 
     async def confirm_update(self, e):
         """
@@ -118,7 +118,7 @@ class KELUpdateConfirmDialog(ft.AlertDialog):
         """
         await self.hide_error()
         self.update_progress_ring.visible = True
-        await self.page.update_async()
+        self.page.update()
 
         # new_digest = self.hab.kever.serder.ked['d']
         new_digest = self.aid_update.said
@@ -153,8 +153,7 @@ class KELUpdateConfirmPanel(IdentifierBase):
         self.aid_updates = list(filter(lambda u: u.aid == hab.pre, aid_updates))
         if not self.aid_updates:
             logger.error(f'No AID updates found for {hab.pre}')
-            self.app.snack = ft.SnackBar(ft.Text('No AID updates found for this identifier'), duration=3000)
-            self.app.page.route = '/identifiers'
+            raise ValueError(f'No AID updates found for {hab.pre}')
 
         self.aid_update = self.aid_updates[0]
 
@@ -165,13 +164,13 @@ class KELUpdateConfirmPanel(IdentifierBase):
                 controls=[
                     ft.Container(
                         ft.Text(value=f'Updating KEL for Alias: {self.hab.name}', size=24),
-                        padding=ft.padding.only(10, 20, 10, 0),
+                        padding=ft.Padding.only(left=10, top=20, right=10, bottom=0),
                     ),
                     ft.Container(
-                        ft.IconButton(icon=ft.icons.CLOSE, on_click=self.cancel),
-                        alignment=ft.alignment.top_right,
+                        ft.IconButton(icon=ft.Icons.CLOSE, on_click=self.cancel),
+                        alignment=ft.Alignment.TOP_RIGHT,
                         expand=True,
-                        padding=ft.padding.only(0, 0, 10, 0),
+                        padding=ft.Padding.only(left=0, top=0, right=10, bottom=0),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -208,16 +207,16 @@ class KELUpdateConfirmPanel(IdentifierBase):
                         ]
                     ),
                     ft.Divider(),
-                    ft.OutlinedButton(text='Confirm Update', on_click=self.confirm_update),
+                    ft.OutlinedButton(content='Confirm Update', on_click=self.confirm_update),
                 ]
             ),
             expand=True,
-            alignment=ft.alignment.top_left,
+            alignment=ft.Alignment.TOP_LEFT,
         )
 
     async def cancel(self, e):
-        self.app.page.route = '/identifiers'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/identifiers')
+        self.app.page.update()
 
     async def confirm_update(self, e):
         """
@@ -227,4 +226,4 @@ class KELUpdateConfirmPanel(IdentifierBase):
         """
         logger.info(f'Updating AID {self.hab.name} {self.aid_update.aid}')
         self.app.agent.update_reqs.push(self.aid_update)
-        self.app.page.route = '/identifiers'
+        await self.app.page.push_route('/identifiers')

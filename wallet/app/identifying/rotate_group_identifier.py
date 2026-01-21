@@ -6,7 +6,7 @@ import logging
 from typing import List, Set
 
 import flet as ft
-from flet_core import FontWeight
+from flet import FontWeight
 from keri import kering
 from keri.app import connecting
 from keri.app.habbing import GroupHab, Hab, Habery
@@ -74,7 +74,7 @@ class RotateGroupIdentifierPanel(IdentifierBase):
         ]
 
         # Next members dropdown
-        self.next_member_options: List[ft.dropdown.Option] = []
+        self.next_member_options: List[ft.DropdownOption] = []
         self.next_member_options.append(self.next_member_option(self.name, self.pre))  # add self as option
         self.next_member_options.extend([self.next_member_option(c['alias'], c['id']) for _, c in enumerate(self.contacts)])
         # Sort on alias
@@ -91,7 +91,10 @@ class RotateGroupIdentifierPanel(IdentifierBase):
         self.next_members_title = ft.Column(
             width=650,
             controls=[
-                ft.Container(content=ft.Text('Signing Members', weight=FontWeight.BOLD), padding=ft.padding.only(0, 20, 0, 0))
+                ft.Container(
+                    content=ft.Text('Signing Members', weight=FontWeight.BOLD),
+                    padding=ft.Padding.only(left=0, top=20, right=0, bottom=0),
+                )
             ],
         )
         self.next_member_list: List[dict] = []
@@ -112,7 +115,7 @@ class RotateGroupIdentifierPanel(IdentifierBase):
             column_spacing=10,
         )
 
-        self.rotate_button = ft.ElevatedButton(
+        self.rotate_button = ft.Button(
             'Rotate',
             on_click=self.on_rotate,
             disabled=True,
@@ -131,13 +134,13 @@ class RotateGroupIdentifierPanel(IdentifierBase):
             controls=[
                 ft.Container(
                     ft.Text(value=f'Alias: {self.hab.name}', size=24),
-                    padding=ft.padding.only(10, 0, 10, 0),
+                    padding=ft.Padding.only(left=10, top=0, right=10, bottom=0),
                 ),
                 ft.Container(
-                    ft.IconButton(icon=ft.icons.CLOSE, on_click=self.back_to_identifier),
-                    alignment=ft.alignment.top_right,
+                    ft.IconButton(icon=ft.Icons.CLOSE, on_click=self.back_to_identifier),
+                    alignment=ft.Alignment.TOP_RIGHT,
                     expand=True,
-                    padding=ft.padding.only(0, 0, 10, 0),
+                    padding=ft.Padding.only(left=0, top=0, right=10, bottom=0),
                 ),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -184,8 +187,8 @@ class RotateGroupIdentifierPanel(IdentifierBase):
             self.next_participant_rows.append(self.next_participant_row(p.alias, p.pre, p.sthold, p.rthold))
 
     @staticmethod
-    def next_member_option(alias: str, pre: str) -> ft.dropdown.Option:
-        return ft.dropdown.Option(key=pre, text=f'{alias} - {pre}', data=(alias, pre))
+    def next_member_option(alias: str, pre: str) -> ft.DropdownOption:
+        return ft.DropdownOption(key=pre, text=f'{alias} - {pre}', data=(alias, pre))
 
     def append_option_once(self, m_alias: str, m_pre: str):
         """
@@ -209,11 +212,11 @@ class RotateGroupIdentifierPanel(IdentifierBase):
 
     async def show_progress_ring(self):
         self.rotate_progress_ring.visible = True
-        await self.page.update_async()
+        self.page.update()
 
     async def hide_progress_ring(self):
         self.rotate_progress_ring.visible = False
-        await self.page.update_async()
+        self.page.update()
 
     def get_sthold(self, pre, signer_count):
         if self.use_prior_thresholds:
@@ -334,7 +337,7 @@ class RotateGroupIdentifierPanel(IdentifierBase):
         """Remove a participant from the next participants list and update the thresholds and options."""
         if pre in self.next_participants:
             p = self.next_participants.pop(pre)
-            print(f'Removing participant {pre}')
+            logger.debug(f'Removing participant {pre}')
             self.rebalance_next_participant_thresholds()
             self.update_next_participants()
 
@@ -383,8 +386,7 @@ class RotateGroupIdentifierPanel(IdentifierBase):
 
     @log_errors
     async def back_to_identifier(self, e):
-        self.app.page.route = f'/identifiers/{self.group_hab.pre}/view'
-        await self.app.page.update_async()
+        await self.app.page.push_route(f'/identifiers/{self.group_hab.pre}/view')
 
     @log_errors
     async def on_rotate(self, _):
@@ -426,8 +428,8 @@ class RotateGroupIdentifierPanel(IdentifierBase):
 
     @log_errors
     async def on_cancel(self, _):
-        self.app.page.route = '/identifiers'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/identifiers')
+        self.app.page.update()
 
     @log_errors
     async def edit_handler(self, e):
@@ -457,10 +459,10 @@ class RotateGroupIdentifierPanel(IdentifierBase):
                 ft.DataCell(ft.Text(f'{sthold if sthold else ""}')),
                 ft.DataCell(ft.Checkbox(value=True, data=pre, on_change=self.toggle_rotation_participant)),
                 ft.DataCell(ft.Text(f'{rthold if rthold else ""}')),
-                ft.DataCell(ft.IconButton(icon=ft.icons.MODE_EDIT_OUTLINE, data=pre, on_click=self.edit_handler)),
+                ft.DataCell(ft.IconButton(icon=ft.Icons.MODE_EDIT_OUTLINE, data=pre, on_click=self.edit_handler)),
                 ft.DataCell(
                     ft.IconButton(
-                        icon=ft.icons.DELETE, data=pre, on_click=self.delete_handler, icon_color=Colouring.get(Colouring.RED)
+                        icon=ft.Icons.DELETE, data=pre, on_click=self.delete_handler, icon_color=Colouring.get(Colouring.RED)
                     )
                 ),
             ],
@@ -566,7 +568,7 @@ class RotateGroupIdentifierPanel(IdentifierBase):
                                 [
                                     self.next_dropdown,
                                     ft.IconButton(
-                                        icon=ft.icons.ADD,
+                                        icon=ft.Icons.ADD,
                                         tooltip='Add Member',
                                         on_click=self.add_handler,
                                     ),
@@ -579,7 +581,7 @@ class RotateGroupIdentifierPanel(IdentifierBase):
                     ft.ExpansionTile(
                         title=ft.Text('Advanced Rotation Configuration'),
                         affinity=ft.TileAffinity.LEADING,
-                        initially_expanded=False,
+                        expanded=False,
                         controls=[
                             ft.ListTile(title=ft.Text('Signing Weights')),
                             ft.Row(
@@ -631,7 +633,7 @@ class RotateGroupIdentifierPanel(IdentifierBase):
                             ft.Row(
                                 [
                                     self.rotate_button,
-                                    ft.ElevatedButton(
+                                    ft.Button(
                                         'Cancel',
                                         on_click=self.on_cancel,
                                     ),
@@ -645,8 +647,8 @@ class RotateGroupIdentifierPanel(IdentifierBase):
                 scroll=ft.ScrollMode.AUTO,
             ),
             expand=True,
-            alignment=ft.alignment.top_left,
-            padding=ft.padding.only(left=5, top=5, bottom=140),
+            alignment=ft.Alignment.TOP_LEFT,
+            padding=ft.Padding.only(left=5, top=5, bottom=140),
         )
 
         return container
@@ -690,8 +692,8 @@ class ThresholdChangeDialog(ft.AlertDialog):
                 height=285,
             ),
             actions=[
-                ft.OutlinedButton(text='Cancel', on_click=self.close_dialog),
-                ft.ElevatedButton(text='Confirm', on_click=self.confirm_update),
+                ft.OutlinedButton(content='Cancel', on_click=self.close_dialog),
+                ft.Button(content='Confirm', on_click=self.confirm_update),
             ],
         )
         self.can_timeout = False
@@ -701,14 +703,14 @@ class ThresholdChangeDialog(ft.AlertDialog):
         Opens dialog
         """
         self.open = True
-        await self.app.page.update_async()
+        self.app.page.update()
 
     async def close_dialog(self, _):
         """
         Closes dialog
         """
         self.open = False
-        await self.page.update_async()
+        self.page.update()
 
     async def show_error(self, message):
         """
@@ -716,7 +718,7 @@ class ThresholdChangeDialog(ft.AlertDialog):
         """
         self.error_text.value = message
         self.error_text.visible = True
-        await self.page.update_async()
+        self.page.update()
         await self.app.snack(message, duration=3000)
 
     async def hide_error(self):
@@ -725,7 +727,7 @@ class ThresholdChangeDialog(ft.AlertDialog):
         """
         self.error_text.value = ''
         self.error_text.visible = False
-        await self.page.update_async()
+        self.page.update()
 
     async def confirm_update(self, e):
         """
@@ -759,4 +761,4 @@ class ThresholdChangeDialog(ft.AlertDialog):
         self.next_participants[self.pre].sthold = sith
         self.next_participants[self.pre].rthold = rsith
         await self.callback()
-        await self.close_dialog(None)
+        self.close_dialog(None)

@@ -1,7 +1,7 @@
 import logging
 
 import flet as ft
-from flet_core import FontWeight, padding
+from flet import FontWeight, Padding
 from keri.app import connecting
 from keri.core import coring, signing
 
@@ -9,7 +9,8 @@ from wallet.app.identifying.identifier import IdentifierBase
 
 logger = logging.getLogger('wallet')
 
-#TODO REMOVE
+
+# TODO REMOVE
 class CreateMultiSigPanel(IdentifierBase):
     """
     CreateMultiSigIdentifierPanel class for creating an identifier to use in the Group Multisig workflow.
@@ -18,9 +19,9 @@ class CreateMultiSigPanel(IdentifierBase):
     def __init__(self, app):
         self.app = app
         self.org = connecting.Organizer(hby=app.agent.hby)
-    
+
         self.witnesses = ft.Column([], spacing=0, expand=True)
-    
+
         # Loading default witnesses
         self.witnessList = self.loadWitnesses(app)
 
@@ -58,7 +59,12 @@ class CreateMultiSigPanel(IdentifierBase):
         kwargs['toad'] = wit_thold
         kwargs['wits'] = [wit['key'] for wit in self.witnessList]
 
-        hab = self.app.hby.makeHab(name=self.alias.value, **kwargs)
+        try:
+            hab = self.app.hby.makeHab(name=self.alias.value, **kwargs)
+        except Exception as ex:
+            await self.app.snack(f'Error creating identifier: {ex}')
+            return
+
         serder, _, _ = hab.getOwnEvent(sn=0)
         await self.app.snack(f'Created AID {hab.pre}.')
 
@@ -66,8 +72,7 @@ class CreateMultiSigPanel(IdentifierBase):
         await self.app.snack(f'Creating {hab.pre}, waiting for witness receipts...')
 
         self.reset()
-        self.app.page.route = f'/workflows/multisig/identifiers/{hab.pre}/contacts/connect'
-        await self.page.update_async()
+        await self.app.page.push_route(f'/workflows/multisig/identifiers/{hab.pre}/contacts/connect')
 
     @staticmethod
     def loadWitnesses(app):
@@ -102,8 +107,8 @@ class CreateMultiSigPanel(IdentifierBase):
 
     async def cancel(self, _):
         self.reset()
-        self.app.page.route = '/home'
-        await self.page.update_async()
+        await self.app.page.push_route('/home')
+        self.page.update()
 
     def reset(self):
         self.alias.value = ''
@@ -131,11 +136,11 @@ class CreateMultiSigPanel(IdentifierBase):
                     self.witnesses,
                     ft.Row(
                         [
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Create',
                                 on_click=self.createAid,
                             ),
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Cancel',
                                 on_click=self.cancel,
                             ),
@@ -145,6 +150,6 @@ class CreateMultiSigPanel(IdentifierBase):
                 scroll=ft.ScrollMode.AUTO,
             ),
             expand=True,
-            alignment=ft.alignment.top_left,
-            padding=padding.only(bottom=105),
+            alignment=ft.Alignment.TOP_LEFT,
+            padding=Padding.only(bottom=105),
         )

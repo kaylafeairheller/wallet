@@ -18,6 +18,59 @@ You can run
 
 which does a `curl -LsSf https://astral.sh/uv/install.sh | sh` to install uv.
 
+## Developer Setup
+
+### Python Version (pyenv)
+
+This project requires Python 3.12.6. We use [pyenv][PYENV] to manage Python versions.
+
+```bash
+# Install Python 3.12.6 if you don't have it
+pyenv install 3.12.6
+
+# The .python-version file will automatically select 3.12.6 in this directory
+python --version  # Should show 3.12.6
+```
+
+### Dependencies and uv.lock
+
+The `uv.lock` file is committed to ensure all developers use identical dependency versions. **Do not delete it** unless you're intentionally upgrading dependencies.
+
+**New developer setup:**
+```bash
+# Install uv if you haven't already
+make setup
+
+# Sync dependencies from the lock file
+uv sync
+```
+
+**Existing developer (after pulling changes):**
+```bash
+# Sync to match the lock file
+uv sync
+```
+
+### Upgrading Dependencies
+
+When upgrading Flet or other dependencies:
+
+1. Update the version in `pyproject.toml`
+2. Regenerate the lock file:
+   ```bash
+   rm uv.lock
+   uv sync
+   ```
+3. Test thoroughly (Flet has breaking changes between versions)
+4. Commit both `pyproject.toml` and `uv.lock`
+
+**If you encounter dependency issues:**
+```bash
+# Clean reinstall from the lock file
+rm -rf .venv
+uv sync
+```
+
 ## Developing
 
 To run a python command with the `uv` environment you do
@@ -152,6 +205,7 @@ See editor integration: https://docs.astral.sh/ruff/editors/setup/ or `make fmt`
 
 ---
 
+[PYENV]: https://github.com/pyenv/pyenv
 [RUFF]: https://github.com/astral-sh/ruff
 [UV]: https://docs.astral.sh/uv/
 [UV_INSTALL]: https://docs.astral.sh/uv/getting-started/installation/

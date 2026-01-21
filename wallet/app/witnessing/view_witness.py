@@ -6,7 +6,8 @@ import datetime
 import logging
 
 import flet as ft
-from flet_core import padding
+import pyperclip
+from flet import Padding
 from keri.app import connecting
 
 from wallet.app.witnessing.witness import WitnessBase
@@ -37,13 +38,13 @@ class ViewWitness(WitnessBase):
                 controls=[
                     ft.Container(
                         ft.Text(value=f'Alias: {self.alias}', size=24),
-                        padding=ft.padding.only(10, 0, 10, 0),
+                        padding=ft.Padding.only(left=10, top=0, right=10, bottom=0),
                     ),
                     ft.Container(
-                        ft.IconButton(icon=ft.icons.CLOSE, on_click=self.close),
-                        alignment=ft.alignment.top_right,
+                        ft.IconButton(icon=ft.Icons.CLOSE, on_click=self.close),
+                        alignment=ft.Alignment.TOP_RIGHT,
                         expand=True,
-                        padding=ft.padding.only(0, 0, 10, 0),
+                        padding=ft.Padding.only(left=0, top=0, right=10, bottom=0),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -66,20 +67,46 @@ class ViewWitness(WitnessBase):
         return sn, dt
 
     def panel(self):
-        options = []
+        # Find identifiers that use this witness
+        using_habs = []
+        for hab in self.app.hby.habs.values():
+            if self.pre in hab.kever.wits:
+                using_habs.append(hab)
 
-        aids = set()
+        # Sort alphabetically
+        using_habs = sorted(using_habs, key=lambda h: h.name.lower())
 
-        for hab in self.app.hby.habs:
-            options.append(
-                ft.dropdown.Option(
-                    key=self.app.hby.habs[hab].pre, text=f'{self.app.hby.habs[hab].name} - {self.app.hby.habs[hab].pre}'
+        # Build the "Witness for" section as collapsible
+        witness_for_section: ft.Control
+        if using_habs:
+            witness_for_section = ft.ExpansionTile(
+                title=ft.Text('Witness for', weight=ft.FontWeight.BOLD, size=14),
+                subtitle=ft.Text(f'{len(using_habs)} identifier{"s" if len(using_habs) != 1 else ""}'),
+                expanded=len(using_habs) <= 3,
+                controls=[
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.PERSON),
+                        title=ft.Text(hab.name),
+                        subtitle=ft.Text(hab.pre, font_family='monospace', size=12),
+                        on_click=self.view_identifier,
+                        data=hab.pre,
+                    )
+                    for hab in using_habs
+                ],
+            )
+        else:
+            witness_for_section = ft.Container(
+                content=ft.Column(
+                    [
+                        ft.Text('Witness for:', weight=ft.FontWeight.BOLD, size=14),
+                        ft.Text(
+                            'Not currently witnessing any identifiers',
+                            color=ft.Colors.ON_SURFACE_VARIANT,
+                            italic=True,
+                        ),
+                    ]
                 ),
             )
-            if self.witness in self.app.hby.habs[hab].kever.wits:
-                aids.add(hab)
-
-        print(aids)
 
         return ft.Container(
             ft.Column(
@@ -96,7 +123,7 @@ class ViewWitness(WitnessBase):
                                 ft.Row(
                                     [
                                         ft.Text('OOBI:', weight=ft.FontWeight.BOLD, size=14),
-                                        ft.Text(  # OOBI URL
+                                        ft.Text(
                                             value=f'{self.witness["oobi"]}',
                                             tooltip='OOBI URL',
                                             max_lines=3,
@@ -105,10 +132,10 @@ class ViewWitness(WitnessBase):
                                             weight=ft.FontWeight.W_200,
                                         ),
                                         ft.IconButton(
-                                            icon=ft.icons.COPY_ROUNDED,
+                                            icon=ft.Icons.COPY_ROUNDED,
                                             data=self.witness['oobi'],
                                             on_click=self.copy_oobi,
-                                            padding=padding.only(right=10),
+                                            padding=Padding.only(right=10),
                                         ),
                                     ]
                                 )
@@ -116,11 +143,11 @@ class ViewWitness(WitnessBase):
                         )
                     ),
                     ft.Divider(),
-                    ft.Text('Witness for:', size=14),
+                    witness_for_section,
                     ft.Divider(),
                     ft.Row(
                         [
-                            ft.ElevatedButton(
+                            ft.Button(
                                 'Close',
                                 on_click=self.close,
                                 data=self.app,
@@ -130,25 +157,27 @@ class ViewWitness(WitnessBase):
                 ]
             ),
             expand=True,
-            alignment=ft.alignment.top_left,
-            padding=padding.only(left=10, top=15, bottom=100),
+            alignment=ft.Alignment.TOP_LEFT,
+            padding=Padding.only(left=10, top=15, bottom=100),
         )
 
     async def close(self, e):
         self.cancelled = True
-        self.app.page.route = '/witnesses'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/witnesses')
+        self.app.page.update()
+
+    async def view_identifier(self, e):
+        """Navigate to view the selected identifier."""
+        prefix = e.control.data
+        await self.app.page.push_route(f'/identifiers/{prefix}/view')
 
     async def copy_oobi(self, e):
-        await self.app.page.set_clipboard_async(e.control.data)
-        self.page.snack_bar = ft.SnackBar(ft.Text('OOBI URL Copied!'), duration=2000)
-
-        self.page.snack_bar.open = True
-        await self.page.update_async()
+        pyperclip.copy(e.control.data)
+        await self.app.snack('OOBI URL Copied!', duration=2000)
 
     async def select_identifier(self, e):
         self.selected_identifier = e.control.value
-        await self.update_async()
+        self.update()
 
     async def show_verify(self):
         return self.selected_identifier is not None

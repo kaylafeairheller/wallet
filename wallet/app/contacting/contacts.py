@@ -4,7 +4,7 @@ import urllib.parse
 from urllib.parse import urlparse
 
 import flet as ft
-from flet_core import padding
+from flet import Padding
 from keri.app import connecting
 
 from wallet.app.contacting.contact import ContactBase
@@ -17,7 +17,7 @@ class Contacts(ContactBase):
         self.app = app
         self.list = ft.Column([], spacing=0, expand=True)
 
-        super().__init__(app, ft.Container(content=self.list, padding=padding.only(bottom=125)))
+        super().__init__(app, ft.Container(content=self.list, padding=Padding.only(bottom=125)))
 
     def did_mount(self):
         self.page.run_task(self.refresh_contacts)
@@ -28,24 +28,32 @@ class Contacts(ContactBase):
         self.page.update()
 
     async def add_contact(self, _):
-        self.app.page.route = '/contacts/create'
-        await self.app.page.update_async()
+        await self.app.page.push_route('/contacts/create')
+        self.app.page.update()
 
     async def set_contacts(self, contacts):
         self.list.controls.clear()
-        icon = ft.icons.PERSON
+        icon = ft.Icons.PERSON
         tip = 'Contacts'
 
-        contacts = sorted(contacts, key=lambda c: c['alias'])
+        contacts = sorted(contacts, key=lambda c: c.get('alias', c['id']).lower())
         contacts = list(filter(lambda c: 'tag=witness' not in c['oobi'], contacts))
 
         if len(contacts) == 0:
             self.list.controls.append(
                 ft.Container(
-                    content=ft.Text(
-                        'No contacts found.',
+                    content=ft.Column(
+                        [
+                            ft.Icon(ft.Icons.PEOPLE_OUTLINE, size=64, color=ft.Colors.ON_SURFACE_VARIANT),
+                            ft.Text('No contacts yet', size=18, weight=ft.FontWeight.W_500),
+                            ft.Text('Contacts you add will appear here', size=14, color=ft.Colors.ON_SURFACE_VARIANT),
+                        ],
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=10,
                     ),
-                    padding=ft.padding.all(20),
+                    padding=ft.Padding.all(40),
+                    alignment=ft.Alignment(0, 0),
+                    expand=True,
                 )
             )
         else:
@@ -57,8 +65,8 @@ class Contacts(ContactBase):
                     continue
 
                 view = ft.PopupMenuItem(
-                    text='View',
-                    icon=ft.icons.PAGEVIEW,
+                    content=ft.Text('View'),
+                    icon=ft.Icons.PAGEVIEW,
                     on_click=self.view_contact,
                 )
                 view.data = contact
@@ -82,10 +90,10 @@ class Contacts(ContactBase):
                     subtitle=ft.Text(contact['id'], font_family='monospace'),
                     trailing=ft.PopupMenuButton(
                         tooltip=None,
-                        icon=ft.icons.MORE_VERT,
+                        icon=ft.Icons.MORE_VERT,
                         items=[
                             view,
-                            ft.PopupMenuItem(text='Delete', icon=ft.icons.DELETE_FOREVER),
+                            ft.PopupMenuItem(content=ft.Text('Delete'), icon=ft.Icons.DELETE_FOREVER),
                         ],
                     ),
                     on_click=self.view_contact,
@@ -95,9 +103,8 @@ class Contacts(ContactBase):
                 self.list.controls.append(ft.Container(content=tile))
                 self.list.controls.append(ft.Divider(opacity=0.1))
 
-        await self.update_async()
+        self.update()
 
     async def view_contact(self, e):
         contact = e.control.data
-        self.app.page.route = f'/contacts/{contact["id"]}/view'
-        await self.app.page.update_async()
+        await self.app.page.push_route(f'/contacts/{contact["id"]}/view')
