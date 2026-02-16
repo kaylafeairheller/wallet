@@ -15,6 +15,7 @@ from wallet.app.identifying.view_identifer import ViewIdentifierPanel
 from wallet.app.naving import Navbar
 from wallet.app.witnessing.add_witness import AddWitness
 from wallet.app.witnessing.view_witness import ViewWitness
+from wallet.app.witnessing.view_witness_events import ViewWitnessEvents
 from wallet.app.witnessing.witnesses import Witnesses
 from wallet.app.workflows.create_multisig.challenge_response import MultisigChallengeResponsePanel
 from wallet.app.workflows.create_multisig.connect_contact import ConnectWithContactPanel
@@ -88,6 +89,16 @@ class Layout(ft.Row):
         org = connecting.Organizer(hby=self.app.hby)
         witness = org.get(aid)
         self.active_view = ViewWitness(app=self.app, witness=witness)
+        self.page.floating_action_button = None
+        self.navbar.rail.selected_index = Navbar.WITNESSES
+        self.navbar.update()
+        self.update()
+        self.page.update()
+
+    async def set_witness_events_view(self, aid):
+        org = connecting.Organizer(hby=self.app.hby)
+        witness = org.get(aid)
+        self.active_view = ViewWitnessEvents(app=self.app, witness=witness)
         self.page.floating_action_button = None
         self.navbar.rail.selected_index = Navbar.WITNESSES
         self.navbar.update()

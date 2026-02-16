@@ -89,45 +89,71 @@ class AgentInitialization(ft.AlertDialog):
         """
         self.page.pop_dialog()
 
+    @log_errors
     async def generate_habery(self, e):
         """
         Generates a new Habery instance and updates the agent drawer.
         """
+        username = self.username.value
+        passcode = self.passcode.value
+
+        if not username:
+            await self.app.snack('Username is required')
+            return
+
+        if not passcode:
+            await self.app.snack('Passcode is required')
+            return
+
         self.page.pop_dialog()
-        cf = configing.Configer(
-            name=self.config.config_file,
-            base='',
-            headDirPath=self.config.config_dir,
-            temp=False,
-            reopen=True,
-            clear=False,
-        )
-        kwa = dict()
+        await self.app.snack(f'Creating wallet for {username}...')
+        self.page.update()
 
-        kwa['salt'] = signing.Salter(raw=self.app.salt.encode('utf-8')).qb64
-        kwa['bran'] = self.passcode.value
-        kwa['algo'] = self.app.algo
-        kwa['tier'] = self.app.tier
+        try:
+            cf = configing.Configer(
+                name=self.config.config_file,
+                base='',
+                headDirPath=self.config.config_dir,
+                temp=False,
+                reopen=True,
+                clear=False,
+            )
+            kwa = dict()
 
-        hby = habbing.Habery(
-            name=self.username.value,
-            base=self.app.base,
-            temp=self.app.temp,
-            cf=cf,
-            **kwa,
-        )
+            kwa['salt'] = signing.Salter(raw=self.app.salt.encode('utf-8')).qb64
+            kwa['bran'] = passcode
+            kwa['algo'] = self.app.algo
+            kwa['tier'] = self.app.tier
 
-        # self.rgy = credentialing.Regery(hby=hby)
-        # self.rgy = credentialing.Regery(hby=self.hby, name=self.name, base=self.base)
-        # self.vry = verifying.Verifier(hby=self.hby, reger=self.rgy.reger)
+            hby = habbing.Habery(
+                name=username,
+                base=self.app.base,
+                temp=self.app.temp,
+                cf=cf,
+                **kwa,
+            )
+        except Exception as ex:
+            logger.exception(f'Error creating Habery for {username}: {ex}')
+            await self.app.snack(f'Failed to create wallet: {str(ex)}')
+            self.page.update()
+            return
 
-        directing.runController([oobiing.OOBILoader(hby=hby)])
-        directing.runController([oobiing.OOBIAuther(hby=hby)])
+        try:
+            # self.rgy = credentialing.Regery(hby=hby)
+            # self.rgy = credentialing.Regery(hby=self.hby, name=self.name, base=self.base)
+            # self.vry = verifying.Verifier(hby=self.hby, reger=self.rgy.reger)
 
-        hby.close()
+            directing.runController([oobiing.OOBILoader(hby=hby)])
+            directing.runController([oobiing.OOBIAuther(hby=hby)])
+        except Exception as ex:
+            logger.exception(f'Error during OOBI initialization for {username}: {ex}')
+            await self.app.snack(f'Wallet created but OOBI initialization failed: {str(ex)}')
+            # Still close hby and update agents since the wallet was created
+        finally:
+            hby.close()
 
         self.app.agentDrawer.update_agents()
-
+        await self.app.snack(f'Wallet {username} created successfully')
         self.page.update()
 
 
