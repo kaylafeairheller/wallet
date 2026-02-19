@@ -3,14 +3,19 @@ view_witness.py - View Witness Panel
 """
 
 import datetime
+import json
 import logging
 
 import flet as ft
+import httpx
 import pyperclip
 from flet import Padding
 from keri.app import connecting
+from keri.core import coring
 
 from wallet.app.witnessing.witness import WitnessBase
+from wallet.app.witnessing.view_witness_events import WitnessEvent, EventListItem, EventDetailPanel
+from wallet.logs import log_errors
 
 logger = logging.getLogger('wallet')
 
@@ -30,6 +35,21 @@ class ViewWitness(WitnessBase):
         sn, dt = self.get_sn_date()
         self.sn_text = ft.Text(sn)
         self.dt_text = ft.Text(dt.strftime('%Y-%m-%d %I:%M %p'))
+
+        # Event-related state
+        self.events: list[WitnessEvent] = []
+        self.filtered_events: list[WitnessEvent] = []
+        self.selected_event: WitnessEvent | None = None
+        self.events_loaded = False
+
+        # Create events section placeholder (will be populated after loading)
+        self.events_section = ft.Container(
+            content=ft.Column([
+                ft.ProgressRing(width=16, height=16),
+                ft.Text("Loading events...", size=12)
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=5),
+            padding=10
+        )
 
         super(ViewWitness, self).__init__(
             app=app,
@@ -145,6 +165,8 @@ class ViewWitness(WitnessBase):
                     ft.Divider(),
                     witness_for_section,
                     ft.Divider(),
+                    self.events_section,
+                    ft.Divider(),
                     ft.Row(
                         [
                             ft.Button(
@@ -160,6 +182,160 @@ class ViewWitness(WitnessBase):
             alignment=ft.Alignment.TOP_LEFT,
             padding=Padding.only(left=10, top=15, bottom=100),
         )
+
+    def did_mount(self):
+        """Load events when component mounts."""
+        self.page.run_task(self.load_events)
+
+    @log_errors
+    async def load_events(self):
+        """Fetch events from witness OOBI endpoint."""
+        try:
+            logger.info(f'Fetching events from {self.witness["oobi"]}')
+
+            # Use synchronous httpx in executor (old httpx version doesn't have AsyncClient)
+            import asyncio
+            loop = asyncio.get_event_loop()
+
+            def fetch():
+                response = httpx.get(self.witness['oobi'], timeout=30.0)
+                return response.content
+
+            data = await loop.run_in_executor(None, fetch)
+
+            # Parse CESR stream
+            self.events = self._parse_cesr_events(data)
+
+            logger.info(f'Loaded {len(self.events)} events')
+
+            self.filtered_events = self.events
+            self.events_loaded = True
+            await self.build_events_section()
+
+        except Exception as e:
+            logger.exception(f'Error fetching events: {e}')
+            self.events_section.content = ft.Column([
+                ft.Icon(ft.icons.ERROR_OUTLINE, size=32, color=ft.colors.ERROR),
+                ft.Text(f'Error loading events: {str(e)}', size=12, color=ft.colors.ERROR)
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=5)
+            self.update()
+
+    def _parse_cesr_events(self, data: bytes) -> list[WitnessEvent]:
+        """Parse CESR stream into events using keripy."""
+        events = []
+
+        try:
+            stream = data
+            while stream:
+                try:
+                    serder = coring.Serder(raw=stream)
+                    event = WitnessEvent(
+                        raw=serder.raw.decode('utf-8'),
+                        data=serder.ked
+                    )
+                    events.append(event)
+
+                    # Move past this event
+                    stream = stream[serder.size:]
+
+                    # Skip attachments (rough heuristic - look for next event or end)
+                    while stream and stream[0:1] != b'{':
+                        stream = stream[1:]
+
+                except Exception:
+                    break
+
+        except Exception as e:
+            logger.exception(f'Error parsing CESR stream: {e}')
+
+        return events
+
+    @log_errors
+    async def build_events_section(self):
+        """Build the events ExpansionTile with list and detail."""
+        if not self.events:
+            self.events_section.content = ft.Column([
+                ft.Text('Events', weight=ft.FontWeight.BOLD, size=14),
+                ft.Text('No events found', color=ft.colors.ON_SURFACE_VARIANT, italic=True, size=12)
+            ])
+            self.update()
+            return
+
+        # Event list column (scrollable)
+        event_list_column = ft.Column(
+            [
+                EventListItem(
+                    event=event,
+                    on_click=lambda e, ev=event: self.page.run_task(self.select_event, ev),
+                    selected=False
+                )
+                for event in self.filtered_events[:20]  # Limit to first 20 for performance
+            ],
+            spacing=4,
+            scroll=ft.ScrollMode.AUTO,
+            height=300  # Fixed height for scrolling
+        )
+
+        # Event detail placeholder
+        self.event_detail_container = ft.Container(
+            content=ft.Column([
+                ft.Icon(ft.icons.ARROW_BACK, size=32, color=ft.colors.ON_SURFACE_VARIANT),
+                ft.Text("Select an event to view details", size=12, color=ft.colors.ON_SURFACE_VARIANT)
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER),
+            height=300,
+            alignment=ft.alignment.center
+        )
+
+        # Build events ExpansionTile
+        self.events_section.content = ft.ExpansionTile(
+            title=ft.Text('Events', weight=ft.FontWeight.BOLD, size=14),
+            subtitle=ft.Text(f'{len(self.events)} event{"s" if len(self.events) != 1 else ""}'),
+            expanded=True,  # Expanded by default
+            controls=[
+                ft.Row([
+                    # Left: Event list
+                    ft.Container(
+                        content=event_list_column,
+                        expand=5
+                    ),
+                    ft.VerticalDivider(width=1, opacity=0.2),
+                    # Right: Event detail
+                    ft.Container(
+                        content=self.event_detail_container,
+                        expand=7
+                    )
+                ], spacing=10)
+            ]
+        )
+
+        self.update()
+
+    @log_errors
+    async def select_event(self, event: WitnessEvent):
+        """Handle event selection."""
+        self.selected_event = event
+        self.event_detail_container.content = EventDetailPanel(self.app, event)
+
+        # Rebuild event list to update selection state
+        if hasattr(self, 'events_section') and self.events_section.content:
+            expansion_tile = self.events_section.content
+            if hasattr(expansion_tile, 'controls') and expansion_tile.controls:
+                row = expansion_tile.controls[0]
+                if hasattr(row, 'controls'):
+                    event_list_container = row.controls[0]
+                    event_list_column = event_list_container.content
+
+                    # Rebuild event list items with updated selection
+                    event_list_column.controls = [
+                        EventListItem(
+                            event=ev,
+                            on_click=lambda e, evt=ev: self.page.run_task(self.select_event, evt),
+                            selected=(ev == self.selected_event)
+                        )
+                        for ev in self.filtered_events[:20]
+                    ]
+
+        self.update()
 
     async def close(self, e):
         self.cancelled = True

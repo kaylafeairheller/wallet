@@ -166,6 +166,8 @@ class WalletApp(ft.Stack):
             await self.layout.set_witnesses_view()
         elif tr.match('/witnesses/create'):
             await self.layout.set_witness_add_view()
+        elif tr.match('/witnesses/:prefix/events'):
+            await self.layout.set_witness_events_view(tr.prefix)
         elif tr.match('/witnesses/:prefix/view'):
             await self.layout.set_witness_view(tr.prefix)
         elif tr.match('/identifiers/:prefix/view'):

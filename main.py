@@ -3,8 +3,12 @@ import ctypes
 import logging.config
 import os
 import platform
+import sys
 from ctypes.util import find_library
 from pathlib import Path
+
+from vendor import v_wsgiref  # noqa - required so that the v_wsgiref package is included in the Flet build
+sys.modules['wsgiref'] = v_wsgiref  # noqa - required so that the wsgiref package is included in the Flet build
 
 import flet as ft
 import uvloop

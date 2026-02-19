@@ -34,7 +34,10 @@ check:
 	uv tool run ruff check --select I
 	uv tool run ruff format --check
 
-sign: build-macos
+sign:
+ifdef REBUILD
+	@$(MAKE) build-macos
+endif
 	./sign.sh
 
 version:
